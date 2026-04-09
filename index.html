@@ -48,11 +48,11 @@
             border: none; border-radius: 1rem; font-weight: 800; cursor: pointer; font-size: 1.2rem;
         }
 
-        /* 사이드바 */
+        /* 사이드바 - 가운데 정렬 적용 */
         nav {
             width: 280px; background: var(--sidebar-bg); padding: 2.5rem 1.5rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
-            flex-shrink: 0;
+            flex-shrink: 0; text-align: center; /* 텍스트 가운데 정렬 */
         }
         .sidebar-header { margin-bottom: 3rem; }
         .sidebar-header h1 { font-size: 1.6rem; font-weight: 800; margin: 0; color: white; line-height: 1.2; }
@@ -62,6 +62,8 @@
             padding: 1.2rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.8rem;
             color: var(--text-dim); font-weight: 700; transition: 0.2s; display: none;
             font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center; /* 내부 아이콘/텍스트 가운데 정렬 */
+            border: 1px solid transparent;
         }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
@@ -98,7 +100,7 @@
         }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
-        /* 개별 좌석 카드 - 텍스트 크기 추가 확장 */
+        /* 개별 좌석 카드 */
         .seat-card {
             background: #1e293b; border-radius: 1.2rem; text-align: center;
             border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
@@ -130,15 +132,16 @@
         }
         .dot { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite; }
 
-        /* 파티션 - 길이 연장하여 모서리 연결 */
+        /* 파티션 */
         .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; }
         .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
         .edit-mode .partition-trigger { display: block; }
 
-        /* 호출 안내 메시지 */
+        /* 호출 안내 메시지 수정 - 크기 키움 */
         #call-instruction {
-            text-align: center; font-size: 1.8rem; font-weight: 800; color: var(--accent);
-            margin-bottom: 1rem; animation: fadeIn 0.5s ease-out;
+            text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--accent);
+            margin-bottom: 1.5rem; animation: fadeIn 0.5s ease-out;
+            background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 1rem;
         }
 
         #call-popup {
@@ -190,7 +193,7 @@
         <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 부서별 호출</div>
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 실시간 수신 모니터</div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 편집</div>
-        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem;">로그아웃</button>
+        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem; width: 100%;">로그아웃</button>
     </nav>
 
     <main id="main-content" style="display: none;">
@@ -215,13 +218,14 @@
                 </div>
             </div>
             
+            <!-- 상단 헤더 - 한 줄로 배치하도록 수정 -->
+            <div id="grid-header-row" style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem; gap: 20px;">
+                <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem; flex-shrink: 0;">◀ 부서 목록으로</button>
+                <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.5rem; color: var(--primary); text-align: right; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">부서명</h2>
+            </div>
+
             <!-- 호출 안내 문구 -->
             <div id="call-instruction" style="display:none;">아래의 선생님 이름을 누르면 호출됩니다.</div>
-
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem;">
-                <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem;">◀ 부서 목록으로</button>
-                <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.2rem; color: var(--primary);">부서명</h2>
-            </div>
 
             <div id="grid-outer-container">
                 <div id="grid-wrapper">
@@ -295,15 +299,15 @@
             await fetchDeptList();
 
             if (currentUser.grade == 1) { 
-                document.getElementById('btn-student').style.display = 'block';
-                document.getElementById('btn-teacher').style.display = 'block';
-                document.getElementById('btn-edit').style.display = 'block';
+                document.getElementById('btn-student').style.display = 'flex';
+                document.getElementById('btn-teacher').style.display = 'flex';
+                document.getElementById('btn-edit').style.display = 'flex';
                 switchMode('student');
             } else if (currentUser.grade == 2) { 
-                document.getElementById('btn-teacher').style.display = 'block';
+                document.getElementById('btn-teacher').style.display = 'flex';
                 switchMode('teacher');
             } else { 
-                document.getElementById('btn-student').style.display = 'block';
+                document.getElementById('btn-student').style.display = 'flex';
                 switchMode('student');
             }
             window.addEventListener('resize', autoScale);
@@ -326,7 +330,6 @@
             document.getElementById('view-title').innerText = deptName;
             document.getElementById('dashboard-view').style.display = 'none';
             
-            // 안내 문구 표시 여부 결정
             const instruction = document.getElementById('call-instruction');
             instruction.style.display = (currentMode === 'student') ? 'block' : 'none';
 
@@ -429,7 +432,7 @@
             layer.innerHTML = '';
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
             const thickness = 6;
-            const extraLength = 10; // 모서리 연결을 위해 조금 더 길게 처리
+            const extraLength = 10;
 
             for (let r = 0; r <= gridRows; r++) {
                 for (let c = 0; c < gridCols; c++) {
