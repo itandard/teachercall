@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SMART CALL - Professional Dark Edition</title>
+    <title>SMART CALL - Department Isolation</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -13,84 +13,54 @@
             --card-bg: #1e293b;
             --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.4);
-            --accent: #10b981; /* 호출 시 포인트 컬러 */
+            --accent: #10b981; 
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
             --partition-idle: rgba(51, 65, 85, 0.5);
             --partition-active: #475569;
             --partition-thickness: 8px;
-            --radius-xl: 1.25rem;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
             font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            background-color: var(--bg);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
+            margin: 0; background-color: var(--bg); color: var(--text-main);
+            display: flex; height: 100vh; width: 100vw; overflow: hidden;
         }
 
         /* Login Overlay */
         #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 5000;
+            display: flex; justify-content: center; align-items: center; z-index: 5000;
         }
         .login-box {
-            background: var(--sidebar-bg);
-            padding: 3rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 90%; max-width: 420px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            background: var(--sidebar-bg); padding: 3rem; border-radius: 2rem;
+            border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 420px; text-align: center;
         }
         .login-box input {
             width: 100%; padding: 1.2rem; margin-bottom: 1rem;
-            background: #1e293b; border: 1px solid #334155;
-            border-radius: 1rem; color: white; font-size: 1rem;
+            background: #1e293b; border: 1px solid #334155; border-radius: 1rem; color: white;
         }
         .login-box button {
-            width: 100%; padding: 1.2rem; background: var(--primary);
-            color: white; border: none; border-radius: 1rem;
-            font-weight: 700; cursor: pointer; transition: 0.3s;
-            box-shadow: 0 4px 14px 0 var(--primary-glow);
+            width: 100%; padding: 1.2rem; background: var(--primary); color: white;
+            border: none; border-radius: 1rem; font-weight: 700; cursor: pointer;
         }
-        .login-box button:hover { transform: translateY(-2px); background: #4f46e5; }
 
         /* Sidebar */
         nav {
             width: 280px; background: var(--sidebar-bg); padding: 2.5rem 1.5rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
-            transition: 0.3s;
         }
-        @media (max-width: 1024px) {
-            nav { width: 90px; padding: 2rem 0.5rem; align-items: center; }
-            nav h2, nav small, nav label, .menu-item b, .menu-item small { display: none; }
-            .menu-item { justify-content: center; width: 55px; }
-        }
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            nav { width: 100%; height: auto; flex-direction: row; order: 2; padding: 1rem; justify-content: space-around; }
-            .menu-item { margin-bottom: 0; flex: 1; }
-        }
-
         .menu-item {
             padding: 1rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.75rem;
             background: transparent; border: 1px solid transparent; transition: 0.3s;
         }
-        .menu-item:hover { background: rgba(255,255,255,0.05); }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border-color: var(--primary); color: var(--primary); }
 
         /* Main Content */
-        main { flex: 1; padding: 2.5rem; display: flex; flex-direction: column; overflow: hidden; }
+        main { flex: 1; padding: 2.5rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
         /* Dept Cards */
         #dept-dashboard {
@@ -99,79 +69,51 @@
         }
         .dept-card {
             background: var(--card-bg); padding: 3rem 2rem; border-radius: 2rem;
-            border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center;
+            border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center;
         }
-        .dept-card:hover { transform: translateY(-10px); background: #2d3a4f; border-color: var(--primary); }
-        .dept-card h3 { font-size: 1.6rem; margin-top: 1rem; color: var(--text-main); }
+        .dept-card:hover { transform: translateY(-10px); border-color: var(--primary); }
 
-        /* Grid Container (Full Layout) */
-        #grid-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        /* Grid UI */
         #grid-outer-container {
             flex: 1; display: flex; align-items: center; justify-content: center;
             background: #0f172a; border-radius: 2rem; overflow: hidden; position: relative;
-            border: 1px solid rgba(255,255,255,0.05);
         }
-        #grid-wrapper {
-            position: relative; padding: 60px; background: #1e293b;
-            border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            transform-origin: center center;
-        }
+        #grid-wrapper { position: relative; padding: 60px; background: #1e293b; border-radius: 1.5rem; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
         /* Seat Cards */
         .seat-card {
             background: #0f172a; border-radius: 1rem; padding: 1rem; text-align: center;
-            border: 2px solid #334155; display: flex; flex-direction: column;
-            justify-content: center; width: 150px; height: 130px; transition: 0.3s;
-            position: relative;
+            border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
+            width: 150px; height: 130px; position: relative;
         }
-        .seat-card:not(.empty):hover { border-color: var(--primary); transform: scale(1.05); z-index: 50; }
-        .seat-card h3 { margin: 0; font-size: 1.3rem; color: #fff; }
-        .seat-card p { margin: 0.3rem 0 0; font-size: 0.9rem; color: var(--text-dim); }
-        .seat-card.empty { border: 2px dashed #334155; background: transparent; opacity: 0.5; }
+        .seat-card:not(.empty) { cursor: pointer; }
+        .seat-card:not(.empty):active { transform: scale(0.95); }
+        .seat-card.empty { border: 2px dashed #334155; background: transparent; opacity: 0.4; }
+
+        /* Partition */
+        .partition { position: absolute; background: var(--partition-idle); border-radius: 10px; z-index: 15; }
+        .partition.active { background: var(--partition-active); }
 
         /* Call Alert Popup */
         #call-popup {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #020617; padding: 4rem; border-radius: 4rem;
             box-shadow: 0 0 0 100vmax rgba(0,0,0,0.8), 0 0 100px var(--primary-glow);
-            z-index: 9999; text-align: center; border: 4px solid var(--primary);
-            width: 90%; max-width: 700px;
+            z-index: 9999; text-align: center; border: 4px solid var(--primary); width: 90%; max-width: 700px;
         }
 
-        /* Partition System */
-        .partition {
-            position: absolute; background: var(--partition-idle);
-            border-radius: 10px; z-index: 15; pointer-events: auto;
-        }
-        .partition.active {
-            background: var(--partition-active);
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
-        .partition.editing { cursor: pointer; }
-        .partition.editing:hover { background: var(--primary); opacity: 0.8; }
-
-        /* Header UI */
-        .header-title { font-size: 2.8rem; font-weight: 900; letter-spacing: -2px; margin: 0; color: #fff; }
+        .header-title { font-size: 2.8rem; font-weight: 900; margin: 0; color: #fff; }
         .header-desc { color: var(--text-dim); font-size: 1.1rem; margin-top: 0.5rem; }
-
-        button.back-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-dim); padding: 0.8rem 1.2rem; border-radius: 1rem;
-            cursor: pointer; margin-bottom: 1.5rem; transition: 0.3s;
-        }
-        button.back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
+        .back-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); padding: 0.8rem 1.2rem; border-radius: 1rem; cursor: pointer; margin-bottom: 1.5rem; }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
         <div class="login-box">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
-            <h1 style="color: #fff; font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem;">SMART CALL</h1>
-            <p style="color: var(--text-dim); margin-bottom: 2.5rem;">Professional School Management</p>
+            <h1 style="color: #fff; font-size: 2.2rem; font-weight: 900;">SMART CALL</h1>
+            <p style="color: var(--text-dim); margin-bottom: 2rem;">Professional School Management</p>
             <input type="text" id="login-id" placeholder="ID">
             <input type="password" id="login-pw" placeholder="Password">
             <button onclick="attemptLogin()">시스템 접속</button>
@@ -182,57 +124,47 @@
     <nav id="sidebar" style="display: none;">
         <div style="margin-bottom: 3rem;">
             <h2 style="font-size: 1.6rem; font-weight: 900; color: #fff;">SMART CALL</h2>
-            <small style="color: var(--primary); font-weight: bold; text-transform: uppercase;">Management V3</small>
+            <div id="user-info-badge" style="font-size: 0.8rem; color: var(--primary); margin-top: 0.5rem;"></div>
         </div>
 
-        <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1rem; display: block; letter-spacing: 1px;">MODES</label>
-        <div id="btn-student" class="menu-item active" onclick="switchMode('student')">
+        <div id="btn-student" class="menu-item" onclick="switchMode('student')">
             <b>🏠 호출 센터</b><br><small>학생 및 내방객용</small>
         </div>
-        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')" style="display: none;">
+        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">
             <b>📺 수신 모니터</b><br><small>교직원 전용 실시간</small>
         </div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')" style="display: none;">
-            <b>⚙️ 레이아웃 설정</b><br><small>관리자 모드</small>
+            <b>⚙️ 레이아웃 설정</b><br><small>관리자 전용</small>
         </div>
 
-        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 1rem; border-radius: 1rem; cursor: pointer; font-weight: bold;">로그아웃</button>
+        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 1rem; border-radius: 1rem; cursor: pointer;">로그아웃</button>
     </nav>
 
     <main id="main-content" style="display: none;">
-        <!-- Dashboard -->
+        <!-- Student Dashboard -->
         <div id="dashboard-view">
             <header>
-                <h1 class="header-title">교무실 선택</h1>
-                <p class="header-desc">원하시는 부서를 선택하여 좌석 배치도를 확인하세요.</p>
+                <h1 class="header-title">부서 선택</h1>
+                <p class="header-desc">방문하신 부서를 선택해 주세요.</p>
             </header>
             <div id="dept-dashboard"></div>
         </div>
 
-        <!-- Grid View -->
+        <!-- Grid View (Calling/Editing) -->
         <div id="grid-view" style="display: none;">
-            <div id="edit-header" style="display: none; background: var(--primary); color: white; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
-                <div style="display:flex; gap: 1rem; align-items: center;">
-                    <b>그리드:</b>
-                    <input type="number" id="grid-rows" value="4" style="width: 60px; background: rgba(0,0,0,0.2); border: none; padding: 8px; border-radius: 8px; color: white; text-align: center;"> x 
-                    <input type="number" id="grid-cols" value="6" style="width: 60px; background: rgba(0,0,0,0.2); border: none; padding: 8px; border-radius: 8px; color: white; text-align: center;">
-                    <button onclick="updateGridSize()" style="padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: white; color: var(--primary);">적용</button>
-                </div>
-                <button onclick="saveAllSettings()" style="background: #020617; color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: 800; cursor: pointer;">클라우드 저장</button>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+            <div id="edit-header" style="display: none; background: var(--primary); color: white; padding: 1rem; border-radius: 1rem; margin-bottom: 1rem; justify-content: space-between; align-items: center;">
                 <div>
-                    <button class="back-btn" onclick="showDashboard()">← 부서 목록으로</button>
-                    <h2 id="view-title" class="header-title">부서명</h2>
+                    그리드: <input type="number" id="grid-rows" style="width:50px"> x <input type="number" id="grid-cols" style="width:50px">
+                    <button onclick="updateGridSize()" style="background: white; color: var(--primary); border: none; padding: 5px 10px; border-radius: 5px; font-weight: bold;">변경</button>
                 </div>
-                <div style="text-align: right;">
-                    <span style="color: var(--primary); font-weight: bold;">● Live Connection</span>
-                    <p class="header-desc" id="view-desc">화면의 좌석을 터치하여 호출하세요.</p>
-                </div>
+                <button onclick="saveAllSettings()" style="background: #020617; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">클라우드 저장</button>
             </div>
 
-            <div id="grid-outer-container">
+            <button class="back-btn" onclick="showDashboard()">← 부서 목록</button>
+            <h2 id="view-title" class="header-title">부서명</h2>
+            <p id="view-desc" class="header-desc">화면의 좌석을 터치하여 호출하세요.</p>
+
+            <div id="grid-outer-container" style="margin-top: 2rem;">
                 <div id="grid-wrapper">
                     <div id="grid-container"></div>
                     <div id="partition-layer" style="position: absolute; inset: 0; pointer-events: none; z-index: 20;"></div>
@@ -240,31 +172,31 @@
             </div>
         </div>
 
-        <!-- Teacher Receiver -->
+        <!-- Teacher Standby Mode -->
         <div id="teacher-view" style="display: none; flex: 1; align-items: center; justify-content: center;">
-            <div style="background: var(--sidebar-bg); padding: 6rem; border-radius: 4rem; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 100px rgba(0,0,0,0.6);">
-                <div style="color: var(--accent); font-weight: 900; margin-bottom: 2rem; font-size: 1.2rem; letter-spacing: 2px;">● SYSTEM ACTIVE</div>
-                <h1 style="font-size: 4.5rem; font-weight: 900; margin: 0; color: #fff;">수신 대기 중</h1>
-                <p style="color: var(--text-dim); font-size: 1.4rem; margin-top: 1.5rem;">실시간으로 호출 알림을 모니터링합니다.</p>
+            <div style="background: var(--sidebar-bg); padding: 5rem; border-radius: 3rem; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+                <div id="monitor-dept-tag" style="color: var(--accent); font-weight: bold; margin-bottom: 1rem;">● 부서명 모니터링 중</div>
+                <h1 style="font-size: 4rem; color: #fff;">수신 대기</h1>
+                <p style="color: var(--text-dim); font-size: 1.2rem;">동일 부서의 호출만 수신합니다.</p>
             </div>
         </div>
 
-        <!-- Popups -->
+        <!-- Call Alert Popup -->
         <div id="call-popup">
-            <span style="font-size: 1.8rem; color: var(--primary); font-weight: 800; display: block; margin-bottom: 2rem; letter-spacing: 5px;">URGENT CALL</span>
-            <span id="popup-name" style="font-size: 7rem; font-weight: 900; display: block; line-height: 1; color: #fff; text-shadow: 0 0 30px var(--primary-glow);">홍길동</span>
-            <span style="font-size: 2.2rem; font-weight: 500; color: var(--text-dim); margin-top: 2rem; display: block;">선생님을 호출하였습니다.</span>
+            <span style="font-size: 1.5rem; color: var(--primary); font-weight: 800; display: block; margin-bottom: 1rem;">부서 내 호출 발생</span>
+            <span id="popup-name" style="font-size: 6rem; font-weight: 900; color: #fff;">홍길동</span>
+            <span style="font-size: 2rem; color: var(--text-dim); display: block; margin-top: 1rem;">선생님을 찾고 있습니다.</span>
         </div>
     </main>
 
-    <!-- Edit Modal -->
-    <div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
-        <div style="background:var(--sidebar-bg); padding:3rem; border-radius:2.5rem; width:90%; max-width:450px; text-align:center; border: 1px solid rgba(255,255,255,0.1);">
-            <h3 id="modal-coord" style="font-size: 1.8rem; margin-bottom: 2rem;">교사 배치</h3>
-            <select id="teacher-picker" style="width:100%; padding:1.2rem; border-radius:1rem; background:#1e293b; color:white; border:1px solid #334155; font-size:1.1rem; margin-bottom: 2rem;"></select>
-            <div style="display:flex; gap:1.5rem;">
-                <button onclick="closeEditModal()" style="flex:1; padding:1.2rem; border:none; border-radius:1rem; background:#334155; color:white; font-weight:bold;">취소</button>
-                <button onclick="applySeatChange()" style="flex:1; padding:1.2rem; border:none; border-radius:1rem; background:var(--primary); color:white; font-weight:bold;">배정 완료</button>
+    <!-- Modal for Edit -->
+    <div id="edit-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:var(--sidebar-bg); padding:2.5rem; border-radius:2rem; width:400px; text-align:center;">
+            <h3>좌석 배정</h3>
+            <select id="teacher-picker" style="width:100%; padding:1rem; border-radius:0.5rem; margin-bottom:2rem; background:#1e293b; color:white;"></select>
+            <div style="display:flex; gap:1rem;">
+                <button onclick="closeEditModal()" style="flex:1; padding:1rem; border-radius:0.5rem; background:#334155; color:white; border:none;">취소</button>
+                <button onclick="applySeatChange()" style="flex:1; padding:1rem; border-radius:0.5rem; background:var(--primary); color:white; border:none;">확인</button>
             </div>
         </div>
     </div>
@@ -275,38 +207,53 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null, currentMode = 'student', currentDept = null;
-        let rows = 4, cols = 6, partitions = { v: [], h: [] }, localLayout = [], deptList = [];
+        let rows = 4, cols = 6, partitions = { v: [], h: [] }, localLayout = [];
         let activeEditCoord = { r: 0, c: 0 }, realtimeChannel = null;
 
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
             const pw = document.getElementById('login-pw').value;
             if (!id || !pw) return;
+
             const { data } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
-            if (data) { currentUser = data; initApp(); } 
-            else { document.getElementById('login-error').innerText = "아이디 또는 비밀번호가 틀립니다."; document.getElementById('login-error').style.display = 'block'; }
+            if (data) { 
+                currentUser = data; 
+                initApp(); 
+            } else { 
+                const err = document.getElementById('login-error');
+                err.innerText = "계정 정보를 확인하세요."; err.style.display = 'block'; 
+            }
         }
 
         async function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
-            if (currentUser.grade <= 2) document.getElementById('btn-teacher').style.display = 'block';
+            document.getElementById('user-info-badge').innerText = `${currentUser.dept} | 권한 ${currentUser.grade}`;
+
+            // 관리자 권한 설정
             if (currentUser.grade == 1) document.getElementById('btn-edit').style.display = 'block';
-            await fetchDeptList();
-            showDashboard();
+
+            // 권한 2 (Teacher)는 즉시 대기 화면으로
+            if (currentUser.grade == 2) {
+                switchMode('teacher');
+            } else {
+                switchMode('student');
+                await fetchDeptList();
+                showDashboard();
+            }
             window.addEventListener('resize', autoScale);
         }
 
         async function fetchDeptList() {
             const { data } = await _supabase.from('t_partition').select('dept');
-            deptList = data ? [...new Set(data.map(d => d.dept))] : ["본교무실", "학년연구실"];
+            const uniqueDepts = data ? [...new Set(data.map(d => d.dept))] : ["본교무실"];
             const container = document.getElementById('dept-dashboard');
-            container.innerHTML = deptList.map(dept => `
+            container.innerHTML = uniqueDepts.map(dept => `
                 <div class="dept-card" onclick="selectDept('${dept}')">
-                    <div style="font-size: 3.5rem;">🏢</div>
-                    <h3>${dept}</h3>
-                    <p style="color: var(--text-dim);">ENTER OFFICE</p>
+                    <div style="font-size: 3rem;">🏢</div>
+                    <h3 style="margin: 1rem 0;">${dept}</h3>
+                    <p style="color: var(--text-dim); font-size: 0.8rem;">부서 입장</p>
                 </div>
             `).join('');
         }
@@ -325,15 +272,14 @@
         }
 
         async function loadDeptLayout() {
-            const { data: partData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
-            if (partData) {
-                rows = partData.rows || 4; cols = partData.cols || 6;
-                partitions = partData.partitions || { v: [], h: [] };
+            const { data: pData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
+            if (pData) {
+                rows = pData.rows || 4; cols = pData.cols || 6; partitions = pData.partitions || { v: [], h: [] };
             } else {
                 rows = 4; cols = 6; partitions = { v: [], h: [] };
             }
-            const { data: teachData } = await _supabase.from('t_teacher').select('*');
-            localLayout = teachData || [];
+            const { data: tData } = await _supabase.from('t_teacher').select('*');
+            localLayout = tData || [];
             renderGrid();
         }
 
@@ -351,12 +297,12 @@
             const deptTeachers = localLayout.filter(t => t.dept === currentDept);
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    const t = deptTeachers.find(teacher => teacher.row_index === r && teacher.col_index === c);
+                    const t = deptTeachers.find(x => x.row_index === r && x.col_index === c);
                     const card = document.createElement('div');
                     card.className = t ? 'seat-card' : 'seat-card empty';
                     if (t) {
                         card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
-                        card.onclick = () => (currentMode === 'edit' ? handleEdit(r, c, t) : sendCall(t.id, t.name));
+                        card.onclick = () => (currentMode === 'edit' ? handleEdit(r, c, t) : sendCall(t.id, t.name, currentDept));
                     } else {
                         card.innerHTML = `<small style="color:#475569">${r},${c}</small>`;
                         if (currentMode === 'edit') card.onclick = () => handleEdit(r, c, null);
@@ -365,56 +311,46 @@
                 }
             }
             
-            // 파티션 그리기 로직 개선 (끊기지 않도록 오버랩)
-            const thickness = 8;
-            const wrapOffset = 60; // Wrapper padding
-
-            // Horizontal Partitions
+            // 파티션 렌더링
+            const thickness = 8, wrapOffset = 60;
+            // 가로
             for (let r = 0; r <= rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const id = `r${r}c${c}`;
-                    const isActive = partitions.h?.includes(id);
-                    if (!isActive && currentMode !== 'edit') continue;
-
-                    const p = document.createElement('div');
-                    p.className = `partition ${isActive ? 'active' : ''} ${currentMode === 'edit' ? 'editing' : ''}`;
-                    
-                    const left = wrapOffset + c * (cardW + gap);
-                    const top = wrapOffset + r * (cardH + gap) - (gap / 2) - (thickness / 2);
-                    
-                    p.style.left = `${left - (thickness/2)}px`;
-                    p.style.top = `${top}px`;
-                    p.style.width = `${cardW + gap + thickness}px`;
-                    p.style.height = `${thickness}px`;
-                    
-                    if (currentMode === 'edit') p.onclick = (e) => togglePartition('h', id, e);
-                    pLayer.appendChild(p);
+                    if (partitions.h?.includes(id) || currentMode === 'edit') {
+                        const p = document.createElement('div');
+                        p.className = `partition ${partitions.h?.includes(id) ? 'active' : ''}`;
+                        p.style.left = `${wrapOffset + c * (cardW + gap) - (thickness/2)}px`;
+                        p.style.top = `${wrapOffset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
+                        p.style.width = `${cardW + gap + thickness}px`;
+                        p.style.height = `${thickness}px`;
+                        if (currentMode === 'edit') {
+                            p.style.cursor = 'pointer'; p.style.pointerEvents = 'auto';
+                            p.onclick = (e) => togglePartition('h', id, e);
+                        }
+                        pLayer.appendChild(p);
+                    }
                 }
             }
-
-            // Vertical Partitions
+            // 세로
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c <= cols; c++) {
                     const id = `r${r}c${c}`;
-                    const isActive = partitions.v?.includes(id);
-                    if (!isActive && currentMode !== 'edit') continue;
-
-                    const p = document.createElement('div');
-                    p.className = `partition ${isActive ? 'active' : ''} ${currentMode === 'edit' ? 'editing' : ''}`;
-                    
-                    const left = wrapOffset + c * (cardW + gap) - (gap / 2) - (thickness / 2);
-                    const top = wrapOffset + r * (cardH + gap);
-                    
-                    p.style.left = `${left}px`;
-                    p.style.top = `${top - (thickness/2)}px`;
-                    p.style.width = `${thickness}px`;
-                    p.style.height = `${cardH + gap + thickness}px`;
-                    
-                    if (currentMode === 'edit') p.onclick = (e) => togglePartition('v', id, e);
-                    pLayer.appendChild(p);
+                    if (partitions.v?.includes(id) || currentMode === 'edit') {
+                        const p = document.createElement('div');
+                        p.className = `partition ${partitions.v?.includes(id) ? 'active' : ''}`;
+                        p.style.left = `${wrapOffset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
+                        p.style.top = `${wrapOffset + r * (cardH + gap) - (thickness/2)}px`;
+                        p.style.width = `${thickness}px`;
+                        p.style.height = `${cardH + gap + thickness}px`;
+                        if (currentMode === 'edit') {
+                            p.style.cursor = 'pointer'; p.style.pointerEvents = 'auto';
+                            p.onclick = (e) => togglePartition('v', id, e);
+                        }
+                        pLayer.appendChild(p);
+                    }
                 }
             }
-
             autoScale();
         }
 
@@ -426,59 +362,34 @@
             renderGrid();
         }
 
-        function autoScale() {
-            const outer = document.getElementById('grid-outer-container');
-            const wrapper = document.getElementById('grid-wrapper');
-            if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return;
-
-            const margin = 100;
-            const scaleW = (outer.clientWidth - margin) / wrapper.offsetWidth;
-            const scaleH = (outer.clientHeight - margin) / wrapper.offsetHeight;
-            const finalScale = Math.min(scaleW, scaleH, 1.3);
-
-            wrapper.style.transform = `scale(${finalScale})`;
-        }
-
-        function switchMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`btn-${mode}`).classList.add('active');
-            document.getElementById('edit-header').style.display = mode === 'edit' ? 'flex' : 'none';
-            
-            if (mode === 'teacher') {
-                document.getElementById('dashboard-view').style.display = 'none';
-                document.getElementById('grid-view').style.display = 'none';
-                document.getElementById('teacher-view').style.display = 'flex';
-                startListening();
-            } else {
-                stopListening();
-                document.getElementById('teacher-view').style.display = 'none';
-                if (currentDept) selectDept(currentDept);
-                else showDashboard();
-            }
-        }
-
-        async function sendCall(tid, name) {
-            const { error } = await _supabase.from('t_calls').insert([{ id: tid, call_time: new Date().toISOString() }]);
+        async function sendCall(tid, name, dept) {
+            // 호출 시 부서 정보(dept)를 함께 보냄
+            const { error } = await _supabase.from('t_calls').insert([{ 
+                id: tid, 
+                dept: dept, 
+                call_time: new Date().toISOString() 
+            }]);
             if (!error) {
-                const card = event.currentTarget;
-                const originalBorder = card.style.borderColor;
-                card.style.borderColor = "var(--accent)";
-                card.style.boxShadow = "0 0 20px var(--accent)";
-                setTimeout(() => {
-                    card.style.borderColor = originalBorder;
-                    card.style.boxShadow = "none";
-                }, 1000);
                 speak(`${name} 선생님을 호출하였습니다.`);
             }
         }
 
         function startListening() {
-            realtimeChannel = _supabase.channel('calls').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, async (payload) => {
-                const { data } = await _supabase.from('t_teacher').select('name').eq('id', payload.new.id).maybeSingle();
-                if (data) showCallPopup(data.name);
+            document.getElementById('monitor-dept-tag').innerText = `● ${currentUser.dept} 모니터링 활성화`;
+            
+            realtimeChannel = _supabase.channel('calls-room').on('postgres_changes', { 
+                event: 'INSERT', schema: 'public', table: 't_calls' 
+            }, async (payload) => {
+                const callData = payload.new;
+                
+                // 로직 핵심: 호출된 부서(callData.dept)와 현재 선생님 부서(currentUser.dept) 비교
+                if (callData.dept === currentUser.dept) {
+                    const { data } = await _supabase.from('t_teacher').select('name').eq('id', callData.id).maybeSingle();
+                    if (data) showCallPopup(data.name);
+                }
             }).subscribe();
         }
+
         function stopListening() { if (realtimeChannel) _supabase.removeChannel(realtimeChannel); }
 
         function showCallPopup(name) {
@@ -489,18 +400,46 @@
         }
 
         function speak(t) {
-            const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; u.rate = 1.1; u.pitch = 1;
+            const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR';
             window.speechSynthesis.speak(u);
         }
 
-        function handleEdit(r, c, t) {
-            if (t) { if (confirm(`${t.name} 선생님의 배치를 해제하시겠습니까?`)) { t.row_index = null; t.col_index = null; renderGrid(); } } 
-            else { activeEditCoord = { r, c }; openEditModal(); }
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            
+            document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('grid-view').style.display = 'none';
+            document.getElementById('teacher-view').style.display = 'none';
+
+            if (mode === 'teacher') {
+                document.getElementById('teacher-view').style.display = 'flex';
+                document.getElementById('btn-student').style.display = 'none'; // 선생님은 호출 페이지 안보임
+                startListening();
+            } else {
+                stopListening();
+                if (currentDept) selectDept(currentDept);
+                else showDashboard();
+            }
         }
 
+        function autoScale() {
+            const outer = document.getElementById('grid-outer-container');
+            const wrapper = document.getElementById('grid-wrapper');
+            if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return;
+            const finalScale = Math.min((outer.clientWidth - 100) / wrapper.offsetWidth, (outer.clientHeight - 100) / wrapper.offsetHeight, 1.2);
+            wrapper.style.transform = `scale(${finalScale})`;
+        }
+
+        function handleEdit(r, c, t) {
+            if (t) { if (confirm(`${t.name} 선생님 배치를 해제할까요?`)) { t.row_index = null; t.col_index = null; renderGrid(); } } 
+            else { activeEditCoord = { r, c }; openEditModal(); }
+        }
         function openEditModal() {
             const picker = document.getElementById('teacher-picker');
-            picker.innerHTML = '<option value="">선생님을 선택하세요</option>' + localLayout.filter(t => !t.row_index).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            picker.innerHTML = '<option value="">선생님 선택</option>' + localLayout.filter(t => !t.row_index).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
             document.getElementById('edit-modal').style.display = 'flex';
         }
         function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
@@ -510,13 +449,11 @@
             if (t) { t.dept = currentDept; t.row_index = activeEditCoord.r; t.col_index = activeEditCoord.c; }
             closeEditModal(); renderGrid();
         }
-
         async function saveAllSettings() {
             for (const t of localLayout) await _supabase.from('t_teacher').update({ dept: t.dept, row_index: t.row_index, col_index: t.col_index }).eq('id', t.id);
             await _supabase.from('t_partition').upsert({ dept: currentDept, rows, cols, partitions });
-            alert("클라우드 서버에 모든 설정이 저장되었습니다.");
+            alert("저장되었습니다.");
         }
-
         function updateGridSize() {
             rows = parseInt(document.getElementById('grid-rows').value);
             cols = parseInt(document.getElementById('grid-cols').value);
