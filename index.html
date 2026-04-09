@@ -27,6 +27,45 @@
             overflow: hidden;
         }
 
+        /* 로그인 화면 */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5000;
+        }
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            box-sizing: border-box;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 사이드바 */
         nav {
             width: 260px;
             background: #1e293b;
@@ -71,10 +110,9 @@
             border-radius: 1rem;
             padding: 20px;
             display: inline-block;
-            align-self: flex-start; /* 중앙 정렬 방지 */
+            align-self: flex-start;
         }
 
-        /* 실제 그리드 영역 */
         #grid-container {
             display: grid;
             position: relative;
@@ -102,14 +140,13 @@
         .seat-card p { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; pointer-events: none; }
         .seat-card.empty { border: 1px dashed #cbd5e1; background: rgba(255,255,255,0.4); }
         
-        /* 파티션 레이어 */
         #partition-layer {
             position: absolute;
-            top: 20px; /* grid-wrapper의 padding과 일치 */
+            top: 20px;
             left: 20px;
             right: 20px;
             bottom: 20px;
-            pointer-events: none; /* 하위 요소 개별 설정 */
+            pointer-events: none;
             z-index: 20;
         }
 
@@ -179,17 +216,28 @@
 </head>
 <body>
 
-    <nav>
+    <!-- 로그인 화면 -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary);">스마트 교사 호출기</h2>
+            <input type="text" id="login-id" placeholder="사용자 ID">
+            <input type="password" id="login-pw" placeholder="비밀번호">
+            <button onclick="attemptLogin()">로그인</button>
+            <p id="login-error" style="color: var(--accent); font-size: 0.85rem; margin-top: 1rem; display: none;">아이디 또는 비밀번호가 틀렸습니다.</p>
+        </div>
+    </div>
+
+    <nav id="sidebar" style="display: none;">
         <h2 style="margin:0 0 1rem 0; font-size: 1.5rem;">선생님 호출기</h2>
         <div id="btn-student" class="menu-item active" onclick="switchMode('student')">
             <b>학생용 모드</b><br><small>교무실 밖 태블릿</small>
         </div>
-        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">
+        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')" style="display: none;">
             <b>교사용 모드</b><br><small>교무실 안 모니터</small>
         </div>
         
-        <label>관리 도구</label>
-        <div id="btn-edit" class="menu-item edit-mode" onclick="switchMode('edit')">
+        <label id="admin-label" style="display: none;">관리 도구</label>
+        <div id="btn-edit" class="menu-item edit-mode" onclick="switchMode('edit')" style="display: none;">
             <b>좌석 배치 수정</b><br><small>그리드 & 파티션</small>
         </div>
 
@@ -200,9 +248,11 @@
             <option value="1학년부">1학년부</option>
             <option value="2학년부">2학년부</option>
         </select>
+        
+        <button onclick="location.reload()" style="margin-top: auto; background: none; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem; border-radius: 0.4rem; cursor: pointer; font-size: 0.8rem;">로그아웃</button>
     </nav>
 
-    <main id="main-content" class="mode-student">
+    <main id="main-content" class="mode-student" style="display: none;">
         <div id="grid-view">
             <div id="edit-header" style="display: none;" class="save-bar">
                 <div class="config-input">
@@ -251,12 +301,60 @@
         const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let currentUser = null;
         let currentMode = 'student';
         let rows = 4, cols = 6;
         let partitions = { v: [], h: [] }; 
         let localLayout = [];
         let activeEditCoord = { r: 0, c: 0 };
         let realtimeChannel = null;
+
+        // --- 로그인 관련 로직 ---
+        async function attemptLogin() {
+            const id = document.getElementById('login-id').value;
+            const pw = document.getElementById('login-pw').value;
+            const errorEl = document.getElementById('login-error');
+
+            const { data, error } = await _supabase
+                .from('t_user')
+                .select('*')
+                .eq('user_id', id)
+                .eq('user_pw', pw)
+                .single();
+
+            if (data) {
+                currentUser = data;
+                initAppAfterLogin();
+            } else {
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function initAppAfterLogin() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'flex';
+
+            // 권한별 UI 제어
+            // grade: 1(admin), 2(교사), 3(학생)
+            if (currentUser.grade <= 2) {
+                document.getElementById('btn-teacher').style.display = 'block';
+            }
+            if (currentUser.grade == 1) {
+                document.getElementById('admin-label').style.display = 'block';
+                document.getElementById('btn-edit').style.display = 'block';
+            }
+
+            fetchTeachers().then(() => renderGrid());
+        }
+
+        // --- 호출 시간 보정 (KST 기준) ---
+        function getKSTTimestamp() {
+            const now = new Date();
+            const kstOffset = 9 * 60 * 60 * 1000; // 9시간 밀리초
+            const kstDate = new Date(now.getTime() + kstOffset);
+            return kstDate.toISOString().replace('Z', '+09:00');
+        }
 
         async function switchMode(mode) {
             currentMode = mode;
@@ -300,14 +398,12 @@
             const gap = 15; 
             const cardW = 120, cardH = 100;
 
-            // 그리드 정의
             container.style.gridTemplateRows = `repeat(${rows}, ${cardH}px)`;
             container.style.gridTemplateColumns = `repeat(${cols}, ${cardW}px)`;
             container.style.gap = `${gap}px`;
 
             const deptTeachers = localLayout.filter(t => t.dept === dept);
 
-            // 좌석 배치
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const t = deptTeachers.find(teacher => teacher.row_index === r && teacher.col_index === c);
@@ -325,14 +421,11 @@
                 }
             }
 
-            // 파티션 배치 (별도 루프로 좌표 계산 일관성 확보)
-            // 수평선 (rows + 1 만큼 필요)
             for (let r = 0; r <= rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
                 }
             }
-            // 수직선 (cols + 1 만큼 필요)
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c <= cols; c++) {
                     createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
@@ -346,15 +439,12 @@
             handle.className = `partition partition-${type} ${partitions[type].includes(id) ? 'active' : ''}`;
             
             if (type === 'v') {
-                // 수직선은 좌석 카드의 왼쪽 시작점에 위치. 
-                // gap의 절반만큼 왼쪽으로 이동하여 중앙 배치.
                 const leftPos = c * (w + g) - (g / 2);
                 const topPos = r * (h + g);
                 handle.style.left = `${leftPos}px`;
                 handle.style.top = `${topPos}px`;
                 handle.style.height = `${h}px`;
             } else {
-                // 수평선은 좌석 카드의 위쪽 시작점에 위치.
                 const topPos = r * (h + g) - (g / 2);
                 const leftPos = c * (w + g);
                 handle.style.top = `${topPos}px`;
@@ -415,7 +505,7 @@
         }
 
         async function saveLayoutChanges() {
-            if (!confirm("현재 배치를 저장하시겠습니까? (파티션은 세션에 저장됩니다)")) return;
+            if (!confirm("현재 배치를 저장하시겠습니까?")) return;
             const btn = document.querySelector('.btn-save');
             btn.innerText = "저장 중...";
             
@@ -435,8 +525,14 @@
         }
 
         async function sendCall(tid, name) {
-            const { error } = await _supabase.from('t_calls').insert([{ id: tid }]);
+            // call_time을 KST 기준으로 생성하여 함께 전송
+            const callTime = getKSTTimestamp();
+            const { error } = await _supabase.from('t_calls').insert([{ 
+                id: tid,
+                call_time: callTime
+            }]);
             if (!error) alert(`${name} 선생님을 호출했습니다.`);
+            else console.error("호출 오류:", error);
         }
 
         function startListening() {
@@ -467,10 +563,6 @@
 
         function loadLayout() { renderGrid(); }
 
-        (async () => {
-            await fetchTeachers();
-            renderGrid();
-        })();
     </script>
 </body>
 </html>
