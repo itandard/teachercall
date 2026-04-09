@@ -75,7 +75,7 @@
             padding: 2rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.5rem;
             z-index: 100;
         }
 
@@ -93,7 +93,7 @@
         .menu-item.edit-mode.active { background: var(--edit-color); border-color: var(--edit-color); }
 
         nav label { font-size: 0.8rem; opacity: 0.6; margin-top: 1rem; margin-bottom: 0.2rem; display: block; }
-        select, input[type="number"] { width: 100%; padding: 0.6rem; border-radius: 0.4rem; background: #334155; color: white; border: none; box-sizing: border-box; }
+        select, input[type="number"], .admin-input { width: 100%; padding: 0.6rem; border-radius: 0.4rem; background: #334155; color: white; border: none; box-sizing: border-box; }
 
         /* 메인 영역 */
         main {
@@ -142,39 +142,19 @@
         .seat-card p { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; pointer-events: none; }
         .seat-card.empty { border: 1px dashed #cbd5e1; background: rgba(255,255,255,0.4); }
 
-        /* 학생 모드 전용 스타일: 좌표 숨기기 및 배경 투명화 */
-        .mode-student .seat-card.empty {
-            border: none;
-            background: transparent;
-            box-shadow: none;
-            pointer-events: none;
-        }
+        .mode-student .seat-card.empty { border: none; background: transparent; box-shadow: none; pointer-events: none; }
         .mode-student .seat-card.empty small { display: none; }
 
         /* 파티션 레이어 */
-        #partition-layer {
-            position: absolute;
-            top: 20px; left: 20px; right: 20px; bottom: 20px;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        .partition {
-            position: absolute;
-            pointer-events: auto;
-            transition: all 0.2s;
-        }
-
+        #partition-layer { position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px; pointer-events: none; z-index: 20; }
+        .partition { position: absolute; pointer-events: auto; transition: all 0.2s; }
         .partition-v { width: 8px; cursor: pointer; transform: translateX(-4px); }
         .partition-v.active { border-left: 3px solid var(--partition-active); }
-
         .partition-h { height: 8px; cursor: pointer; transform: translateY(-4px); }
         .partition-h.active { border-top: 3px solid var(--partition-active); }
 
-        /* 비편집 모드 시 파티션 처리 */
         .mode-student .partition, .mode-teacher .partition { pointer-events: none; }
         .mode-student .partition:not(.active), .mode-teacher .partition:not(.active) { display: none; }
-
         .mode-edit .partition:not(.active) { background: var(--partition-idle); }
         .mode-edit .partition:hover { background: var(--edit-color) !important; opacity: 0.8; }
 
@@ -186,22 +166,29 @@
         .config-input { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
         .config-input input { width: 60px !important; }
 
-        /* 호출 알림 팝업 */
+        /* 관리 리스트 스타일 */
+        .admin-section { max-width: 800px; background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .admin-table th, .admin-table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .admin-table tr:hover { background: #f8fafc; }
+        .admin-btn { padding: 0.4rem 0.8rem; border-radius: 0.3rem; border: none; cursor: pointer; font-size: 0.85rem; }
+        .btn-del { background: #fee2e2; color: #b91c1c; }
+        .btn-edit { background: #e0f2fe; color: #0369a1; }
+        .admin-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; }
+        .admin-form input, .admin-form select { padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.4rem; background: white; color: var(--text); }
+
+        /* 호출 알림 */
         #call-popup {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; padding: 3rem 5rem; border-radius: 2rem;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); z-index: 2000; text-align: center; border: 6px solid var(--primary);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes popIn {
-            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
+        @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
         #popup-name { font-size: 5rem; font-weight: 900; display: block; color: var(--text); margin-bottom: 0.5rem; }
         #popup-msg { font-size: 2rem; font-weight: 600; color: var(--primary); }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1999; }
 
-        /* 편집용 모달 */
         .modal { display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 2rem; border-radius: 1rem; width: 320px; text-align: center; }
         .btn { padding: 0.6rem 1rem; border-radius: 0.4rem; border: none; cursor: pointer; font-weight: bold; }
@@ -232,21 +219,26 @@
         
         <label id="admin-label" style="display: none;">관리 도구</label>
         <div id="btn-edit" class="menu-item edit-mode" onclick="switchMode('edit')" style="display: none;">
-            <b>좌석 배치 수정</b><br><small>그리드 & 파티션</small>
+            <b>좌석 배치 수정</b>
+        </div>
+        <div id="btn-manage-teachers" class="menu-item edit-mode" onclick="switchMode('manage-teachers')" style="display: none;">
+            <b>교사 정보 수정</b>
+        </div>
+        <div id="btn-manage-depts" class="menu-item edit-mode" onclick="switchMode('manage-depts')" style="display: none;">
+            <b>부서 이름 수정</b>
         </div>
 
         <hr style="width:100%; opacity:0.1; margin: 1rem 0;">
         <label>부서 선택</label>
         <select id="dept-select" onchange="loadDeptLayout()">
-            <option value="교무부">교무부</option>
-            <option value="1학년부">1학년부</option>
-            <option value="2학년부">2학년부</option>
+            <!-- Dynamic Depts -->
         </select>
         
         <button onclick="location.reload()" style="margin-top: auto; background: none; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem; border-radius: 0.4rem; cursor: pointer; font-size: 0.8rem;">로그아웃</button>
     </nav>
 
     <main id="main-content" class="mode-student" style="display: none;">
+        <!-- 좌석 배치 뷰 -->
         <div id="grid-view">
             <div id="edit-header" style="display: none;" class="save-bar">
                 <div class="config-input">
@@ -254,25 +246,49 @@
                     Cols: <input type="number" id="grid-cols" value="6" min="1" max="10">
                     <button class="btn btn-save" onclick="updateGridSize()">적용</button>
                 </div>
-                <div>
-                    <button class="btn btn-save" onclick="saveAllSettings()">설정 저장</button>
-                </div>
+                <div><button class="btn btn-save" onclick="saveAllSettings()">설정 저장</button></div>
             </div>
-            
             <h1 id="view-title">좌석 배치도</h1>
             <p id="view-desc">호출하실 선생님의 자리를 터치해 주세요.</p>
-            
             <div id="grid-wrapper">
                 <div id="grid-container"></div>
                 <div id="partition-layer"></div>
             </div>
         </div>
 
+        <!-- 교사 수신 뷰 -->
         <div id="teacher-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex:1;">
             <div class="status-badge" style="padding: 0.5rem 1rem; border-radius: 2rem; background: #dcfce7; color: #166534; font-weight: bold; margin-bottom: 2rem;">● 실시간 호출 수신 모드</div>
             <div style="font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 1rem;">현재 호출 대기 중입니다.</div>
-            <div style="font-size: 1.2rem; color: #64748b;">학생이 호출하면 큰 화면과 음성으로 알려드립니다.</div>
             <button onclick="testSpeech()" style="margin-top: 3rem; background: #e2e8f0; border: none; padding: 0.8rem 1.5rem; border-radius: 0.5rem; cursor: pointer; color: #475569; font-weight: bold;">스피커 테스트</button>
+        </div>
+
+        <!-- 교사 관리 뷰 -->
+        <div id="admin-teacher-view" style="display: none;" class="admin-section">
+            <h1>교사 정보 관리</h1>
+            <div class="admin-form">
+                <input type="text" id="new-teacher-name" placeholder="선생님 이름">
+                <input type="text" id="new-teacher-subject" placeholder="담당 과목">
+                <select id="new-teacher-dept"></select>
+                <button class="btn btn-primary" onclick="addTeacher()">교사 추가</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>이름</th><th>과목</th><th>부서</th><th>작업</th></tr></thead>
+                <tbody id="teacher-list-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 부서 관리 뷰 -->
+        <div id="admin-dept-view" style="display: none;" class="admin-section">
+            <h1>부서 관리</h1>
+            <div class="admin-form">
+                <input type="text" id="new-dept-name" placeholder="새 부서 이름">
+                <button class="btn btn-primary" onclick="addDept()">부서 추가</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>부서 이름</th><th>작업</th></tr></thead>
+                <tbody id="dept-list-body"></tbody>
+            </table>
         </div>
 
         <div id="overlay" class="overlay"></div>
@@ -291,7 +307,6 @@
     </main>
 
     <script>
-        // --- Supabase 설정 ---
         const SUPABASE_URL = 'https://tonuqhqyeqgjbyeihjid.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -301,58 +316,27 @@
         let rows = 4, cols = 6;
         let partitions = { v: [], h: [] }; 
         let localLayout = [];
+        let deptList = [];
         let activeEditCoord = { r: 0, c: 0 };
         let realtimeChannel = null;
 
-        // --- 로그인 시스템 ---
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
             const pw = document.getElementById('login-pw').value;
             const errorEl = document.getElementById('login-error');
             const btn = document.getElementById('login-btn');
 
-            if (!id || !pw) {
-                errorEl.innerText = "아이디와 비밀번호를 모두 입력하세요.";
-                errorEl.style.display = 'block';
-                return;
-            }
+            if (!id || !pw) return;
 
             try {
                 btn.disabled = true;
-                btn.innerText = "로그인 중...";
-                errorEl.style.display = 'none';
-
-                const { data, error } = await _supabase
-                    .from('t_user')
-                    .select('*')
-                    .eq('user_id', id)
-                    .eq('user_pw', pw)
-                    .maybeSingle();
-
-                if (error) throw error;
-
-                if (data) {
-                    currentUser = data;
-                    initApp();
-                } else {
-                    errorEl.innerText = "아이디 또는 비밀번호가 틀렸습니다.";
-                    errorEl.style.display = 'block';
-                }
-            } catch (err) {
-                console.error("로그인 오류:", err);
-                errorEl.innerText = "연결 실패 (Supabase 설정 확인 필요)";
-                errorEl.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "로그인";
-            }
+                const { data, error } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
+                if (data) { currentUser = data; initApp(); } 
+                else { errorEl.innerText = "로그인 정보가 올바르지 않습니다."; errorEl.style.display = 'block'; }
+            } catch (err) { console.error(err); } finally { btn.disabled = false; }
         }
 
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && document.getElementById('login-overlay').style.display !== 'none') attemptLogin();
-        });
-
-        function initApp() {
+        async function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
@@ -361,11 +345,25 @@
             if (currentUser.grade == 1) {
                 document.getElementById('admin-label').style.display = 'block';
                 document.getElementById('btn-edit').style.display = 'block';
+                document.getElementById('btn-manage-teachers').style.display = 'block';
+                document.getElementById('btn-manage-depts').style.display = 'block';
             }
+            await refreshDepts();
             loadDeptLayout();
         }
 
-        // --- 데이터 로드 ---
+        async function refreshDepts() {
+            const { data } = await _supabase.from('t_partition').select('dept');
+            deptList = data ? data.map(d => d.dept) : ["교무부"];
+            
+            const select = document.getElementById('dept-select');
+            const newTeacherDept = document.getElementById('new-teacher-dept');
+            
+            const options = deptList.map(d => `<option value="${d}">${d}</option>`).join('');
+            select.innerHTML = options;
+            if(newTeacherDept) newTeacherDept.innerHTML = options;
+        }
+
         async function loadDeptLayout() {
             const dept = document.getElementById('dept-select').value;
             try {
@@ -377,40 +375,30 @@
                     document.getElementById('grid-rows').value = rows;
                     document.getElementById('grid-cols').value = cols;
                 }
-
                 const { data: teachData } = await _supabase.from('t_teacher').select('*').order('name');
                 if (teachData) localLayout = teachData;
-
                 renderGrid();
-            } catch (err) {
-                console.error("데이터 로드 실패:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         function renderGrid() {
             const dept = document.getElementById('dept-select').value;
             document.getElementById('view-title').innerText = `${dept} 좌석 배치도`;
-            
             const container = document.getElementById('grid-container');
             const pLayer = document.getElementById('partition-layer');
-            container.innerHTML = '';
-            pLayer.innerHTML = '';
+            container.innerHTML = ''; pLayer.innerHTML = '';
 
-            const gap = 15; 
-            const cardW = 120, cardH = 100;
-
+            const gap = 15, cardW = 120, cardH = 100;
             container.style.gridTemplateRows = `repeat(${rows}, ${cardH}px)`;
             container.style.gridTemplateColumns = `repeat(${cols}, ${cardW}px)`;
             container.style.gap = `${gap}px`;
 
             const deptTeachers = localLayout.filter(t => t.dept === dept);
-
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const t = deptTeachers.find(teacher => teacher.row_index === r && teacher.col_index === c);
                     const card = document.createElement('div');
                     card.className = t ? 'seat-card assigned' : 'seat-card empty';
-                    
                     if (t) {
                         card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
                         card.onclick = () => (currentMode === 'edit' ? handleEditClick(r, c, t) : sendCall(t.id, t.name));
@@ -421,13 +409,8 @@
                     container.appendChild(card);
                 }
             }
-
-            for (let r = 0; r <= rows; r++) {
-                for (let c = 0; c < cols; c++) createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
-            }
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c <= cols; c++) createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
-            }
+            for (let r = 0; r <= rows; r++) for (let c = 0; c < cols; c++) createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
+            for (let r = 0; r < rows; r++) for (let c = 0; c <= cols; c++) createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
         }
 
         function createPartition(r, c, type, parent, w, h, g) {
@@ -435,199 +418,149 @@
             const id = `r${r}c${c}`;
             const isActive = partitions[type] && partitions[type].includes(id);
             handle.className = `partition partition-${type} ${isActive ? 'active' : ''}`;
-            
             if (type === 'v') {
-                const leftPos = c * (w + g) - (g / 2);
-                const topPos = r * (h + g);
-                handle.style.left = `${leftPos}px`;
-                handle.style.top = `${topPos}px`;
+                handle.style.left = `${c * (w + g) - (g / 2)}px`;
+                handle.style.top = `${r * (h + g)}px`;
                 handle.style.height = `${h}px`;
             } else {
-                const topPos = r * (h + g) - (g / 2);
-                const leftPos = c * (w + g);
-                handle.style.top = `${topPos}px`;
-                handle.style.left = `${leftPos}px`;
+                handle.style.top = `${r * (h + g) - (g / 2)}px`;
+                handle.style.left = `${c * (w + g)}px`;
                 handle.style.width = `${w}px`;
             }
-
             handle.onclick = (e) => {
                 if (currentMode !== 'edit') return;
                 e.stopPropagation();
                 if (!partitions[type]) partitions[type] = [];
-                if (partitions[type].includes(id)) {
-                    partitions[type] = partitions[type].filter(i => i !== id);
-                    handle.classList.remove('active');
-                } else {
-                    partitions[type].push(id);
-                    handle.classList.add('active');
-                }
+                if (partitions[type].includes(id)) partitions[type] = partitions[type].filter(i => i !== id);
+                else partitions[type].push(id);
+                handle.classList.toggle('active');
             };
             parent.appendChild(handle);
         }
 
-        function updateGridSize() {
-            rows = parseInt(document.getElementById('grid-rows').value);
-            cols = parseInt(document.getElementById('grid-cols').value);
-            renderGrid();
+        async function addTeacher() {
+            const name = document.getElementById('new-teacher-name').value;
+            const subject = document.getElementById('new-teacher-subject').value;
+            const dept = document.getElementById('new-teacher-dept').value;
+            if(!name) return alert("이름을 입력하세요.");
+            await _supabase.from('t_teacher').insert([{ name, subject, dept, row_index: null, col_index: null }]);
+            document.getElementById('new-teacher-name').value = '';
+            document.getElementById('new-teacher-subject').value = '';
+            renderTeacherAdmin();
         }
 
-        async function saveAllSettings() {
-            if (!confirm("배치와 파티션 정보를 저장하시겠습니까?")) return;
-            const btn = document.querySelector('.btn-save');
-            btn.innerText = "저장 중...";
-            const dept = document.getElementById('dept-select').value;
-
-            try {
-                for (const t of localLayout) {
-                    await _supabase.from('t_teacher').update({
-                        dept: t.dept, row_index: t.row_index, col_index: t.col_index
-                    }).eq('id', t.id);
-                }
-                
-                await _supabase.from('t_partition').upsert({
-                    dept: dept,
-                    rows: rows,
-                    cols: cols,
-                    partitions: partitions
-                });
-
-                alert("저장되었습니다.");
-                switchMode('student');
-            } catch (err) {
-                alert("저장 오류 발생");
-            } finally {
-                btn.innerText = "설정 저장";
-            }
+        async function deleteTeacher(id) {
+            if(!confirm("이 교사 정보를 삭제하시겠습니까?")) return;
+            await _supabase.from('t_teacher').delete().eq('id', id);
+            renderTeacherAdmin();
         }
 
-        // --- 모드 및 실시간 연동 강화 ---
+        async function renderTeacherAdmin() {
+            const { data } = await _supabase.from('t_teacher').select('*').order('name');
+            const body = document.getElementById('teacher-list-body');
+            body.innerHTML = data.map(t => `
+                <tr>
+                    <td>${t.name}</td>
+                    <td>${t.subject || '-'}</td>
+                    <td>${t.dept}</td>
+                    <td><button class="admin-btn btn-del" onclick="deleteTeacher(${t.id})">삭제</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function addDept() {
+            const name = document.getElementById('new-dept-name').value;
+            if(!name) return;
+            await _supabase.from('t_partition').insert([{ dept: name, rows: 4, cols: 6, partitions: {v:[], h:[]} }]);
+            document.getElementById('new-dept-name').value = '';
+            await refreshDepts();
+            renderDeptAdmin();
+        }
+
+        async function deleteDept(name) {
+            if(!confirm(`'${name}' 부서를 삭제하시겠습니까? (소속 교사들의 부서 정보는 수동으로 수정해야 합니다.)`)) return;
+            await _supabase.from('t_partition').delete().eq('dept', name);
+            await refreshDepts();
+            renderDeptAdmin();
+        }
+
+        async function renderDeptAdmin() {
+            const body = document.getElementById('dept-list-body');
+            body.innerHTML = deptList.map(d => `
+                <tr>
+                    <td>${d}</td>
+                    <td><button class="admin-btn btn-del" onclick="deleteDept('${d}')">삭제</button></td>
+                </tr>
+            `).join('');
+        }
+
         function switchMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`btn-${mode}`).classList.add('active');
-            document.getElementById('main-content').className = `mode-${mode}`;
-
-            document.getElementById('grid-view').style.display = (mode === 'teacher') ? 'none' : 'block';
+            const btn = document.getElementById(`btn-${mode}`) || document.getElementById('btn-student');
+            btn.classList.add('active');
+            
+            document.getElementById('grid-view').style.display = ['student', 'edit'].includes(mode) ? 'block' : 'none';
             document.getElementById('teacher-view').style.display = (mode === 'teacher') ? 'flex' : 'none';
+            document.getElementById('admin-teacher-view').style.display = (mode === 'manage-teachers') ? 'block' : 'none';
+            document.getElementById('admin-dept-view').style.display = (mode === 'manage-depts') ? 'block' : 'none';
             document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
 
-            if (mode === 'teacher') {
-                stopListening(); 
-                startListening();
-                speak("교사용 수신 모드가 활성화되었습니다.");
-            } else {
-                stopListening(); 
-                loadDeptLayout();
-            }
+            if (mode === 'teacher') startListening();
+            else stopListening();
+
+            if (mode === 'manage-teachers') renderTeacherAdmin();
+            if (mode === 'manage-depts') renderDeptAdmin();
+            if (['student', 'edit'].includes(mode)) loadDeptLayout();
         }
 
         async function sendCall(tid, name) {
             const now = new Date();
             const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)).toISOString().replace('Z', '+09:00');
-            
-            // 데이터베이스에 호출 로그 기록
             const { error } = await _supabase.from('t_calls').insert([{ id: tid, call_time: kstTime }]);
-            
-            if (error) {
-                console.error("호출 실패:", error);
-                alert("호출을 기록하지 못했습니다.");
-            } else {
-                alert(`${name} 선생님을 호출했습니다.`);
-            }
+            if (!error) alert(`${name} 선생님을 호출했습니다.`);
         }
 
         function startListening() {
-            console.log("실시간 구독 시작...");
-            // t_calls 테이블의 INSERT 이벤트를 감시
             realtimeChannel = _supabase.channel('public:t_calls')
-                .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 't_calls' 
-                }, async (payload) => {
-                    console.log("호출 감지됨:", payload);
-                    const callId = payload.new.id;
-                    
-                    // 선생님 성함 가져오기
-                    const { data, error } = await _supabase
-                        .from('t_teacher')
-                        .select('name')
-                        .eq('id', callId)
-                        .maybeSingle();
-                        
-                    if (data) {
-                        showCallPopup(data.name);
-                    }
-                })
-                .subscribe((status) => {
-                    console.log("구독 상태:", status);
-                });
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, async (payload) => {
+                    const { data } = await _supabase.from('t_teacher').select('name').eq('id', payload.new.id).maybeSingle();
+                    if (data) showCallPopup(data.name);
+                }).subscribe();
         }
 
-        function stopListening() { 
-            if (realtimeChannel) {
-                console.log("실시간 구독 해제");
-                _supabase.removeChannel(realtimeChannel);
-                realtimeChannel = null;
-            } 
-        }
+        function stopListening() { if (realtimeChannel) { _supabase.removeChannel(realtimeChannel); realtimeChannel = null; } }
 
         function showCallPopup(name) {
-            const popup = document.getElementById('call-popup');
-            const overlay = document.getElementById('overlay');
-            const nameEl = document.getElementById('popup-name');
-            
-            nameEl.innerText = name;
-            popup.style.display = 'block';
-            overlay.style.display = 'block';
-            
-            speak(`${name} 선생님, 호출이 왔습니다.`);
-            
-            // 5초 후 자동 닫기
-            setTimeout(() => {
-                popup.style.display = 'none';
-                overlay.style.display = 'none';
-            }, 5000);
+            document.getElementById('popup-name').innerText = name;
+            document.getElementById('call-popup').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            speak(`${name} 선생님, 호출입니다.`);
+            setTimeout(() => { document.getElementById('call-popup').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; }, 5000);
         }
 
         function speak(t) {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(t); 
-            u.lang = 'ko-KR';
-            u.rate = 1.0;
-            u.pitch = 1.0;
+            const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR';
             window.speechSynthesis.speak(u);
         }
 
-        function testSpeech() {
-            speak("테스트 음성입니다. 정상적으로 들리신다면 수신 준비가 완료된 것입니다.");
-        }
+        function testSpeech() { speak("정상 작동 확인"); }
 
         function handleEditClick(r, c, teacher) {
             if (teacher) {
-                if (confirm(`${teacher.name} 선생님 배치를 해제할까요?`)) {
+                if (confirm(`${teacher.name} 배치를 해제할까요?`)) {
                     const idx = localLayout.findIndex(t => t.id === teacher.id);
-                    localLayout[idx].row_index = null; 
-                    localLayout[idx].col_index = null;
+                    localLayout[idx].row_index = null; localLayout[idx].col_index = null;
                     renderGrid();
                 }
-            } else {
-                activeEditCoord = { r, c };
-                openEditModal();
-            }
+            } else { activeEditCoord = { r, c }; openEditModal(); }
         }
 
         function openEditModal() {
             const picker = document.getElementById('teacher-picker');
             document.getElementById('modal-coord').innerText = `${activeEditCoord.r}, ${activeEditCoord.c} 배정`;
-            picker.innerHTML = '<option value="">-- 선생님 선택 --</option>';
-            localLayout.filter(t => t.row_index === null).forEach(t => {
-                const opt = document.createElement('option'); 
-                opt.value = t.id; 
-                opt.innerText = t.name;
-                picker.appendChild(opt);
-            });
+            picker.innerHTML = '<option value="">-- 선택 --</option>' + 
+                localLayout.filter(t => t.row_index === null).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
@@ -638,12 +571,24 @@
             localLayout[idx].dept = document.getElementById('dept-select').value;
             localLayout[idx].row_index = activeEditCoord.r;
             localLayout[idx].col_index = activeEditCoord.c;
-            closeEditModal(); 
-            renderGrid();
+            closeEditModal(); renderGrid();
         }
 
-        function closeEditModal() { 
-            document.getElementById('edit-modal').style.display = 'none'; 
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+        
+        async function saveAllSettings() {
+            const dept = document.getElementById('dept-select').value;
+            for (const t of localLayout) {
+                await _supabase.from('t_teacher').update({ dept: t.dept, row_index: t.row_index, col_index: t.col_index }).eq('id', t.id);
+            }
+            await _supabase.from('t_partition').upsert({ dept, rows, cols, partitions });
+            alert("저장되었습니다.");
+        }
+
+        function updateGridSize() {
+            rows = parseInt(document.getElementById('grid-rows').value);
+            cols = parseInt(document.getElementById('grid-cols').value);
+            renderGrid();
         }
     </script>
 </body>
