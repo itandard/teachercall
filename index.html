@@ -16,7 +16,6 @@
             --accent: #10b981; 
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
-            --partition-idle: rgba(71, 85, 105, 0.4);
             --partition-active: #94a3b8;
         }
 
@@ -84,11 +83,11 @@
             background: var(--card-bg); border-radius: 2.5rem; overflow: hidden; position: relative;
             margin-top: 1.5rem; border: 1px solid rgba(255,255,255,0.05);
         }
-        #grid-wrapper { position: relative; padding: 100px; transform-origin: center center; }
+        #grid-wrapper { position: relative; padding: 150px; transform-origin: center center; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
         .seat-card {
-            background: #0f172a; border-radius: 1.2rem; padding: 1.2rem; text-align: center;
+            background: #0f172a; border-radius: 1rem; padding: 1.2rem; text-align: center;
             border: 1px solid #334155; display: flex; flex-direction: column; justify-content: center;
             width: 160px; height: 130px; transition: 0.2s; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 10;
@@ -99,7 +98,7 @@
         .seat-card.empty { background: transparent; border: 1px solid rgba(255,255,255,0.03); cursor: default; }
         .edit-mode .seat-card.empty { background: rgba(255,255,255,0.02); border: 1px dashed #334155; cursor: pointer; }
 
-        /* Partition Controls */
+        /* Partition Controls - 시각적 정확도 개선 */
         .partition-trigger {
             position: absolute; background: transparent; cursor: pointer; z-index: 30;
             display: none; transition: 0.2s;
@@ -109,7 +108,7 @@
 
         .partition { 
             position: absolute; background: var(--partition-active); z-index: 5; pointer-events: none; 
-            border-radius: 10px;
+            /* 연결 부위를 깔끔하게 하기 위해 radius 제거 */
         }
 
         /* Modal */
@@ -221,7 +220,7 @@
             <div style="margin-top: 20px;">
                 <label style="color:var(--text-dim); font-size: 0.9rem;">교사 선택</label>
                 <select id="select-teacher-list">
-                    <option value="">-- 불러오는 중... --</option>
+                    <option value="">불러오는 중...</option>
                 </select>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
@@ -262,8 +261,9 @@
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
 
-            // 1. 교사 목록을 먼저 확실히 불러옵니다.
+            // 명단 로딩 완료 후 다음 단계 진행
             await fetchAllTeachers();
+            await fetchDeptList();
 
             if (currentUser.grade == 1) {
                 document.getElementById('btn-student').style.display = 'block';
@@ -277,28 +277,25 @@
                 document.getElementById('btn-student').style.display = 'block';
                 switchMode('student');
             }
-            fetchDeptList();
             window.addEventListener('resize', autoScale);
         }
 
-        // 전체 교사 명단을 가져와 드롭다운에 미리 넣어두는 함수
         async function fetchAllTeachers() {
-            const { data, error } = await _supabase.from('t_teacher_list').select('*');
             const select = document.getElementById('select-teacher-list');
+            select.innerHTML = '<option value="">명단 확인 중...</option>';
             
-            if (error) {
-                console.error("교사 명단 로딩 실패:", error);
-                select.innerHTML = '<option value="">데이터 오류</option>';
-                return;
-            }
+            try {
+                const { data, error } = await _supabase.from('t_teacher_list').select('*');
+                if (error) throw error;
 
-            allTeachers = data || [];
-            select.innerHTML = '<option value="">-- 교사를 선택하세요 --</option>';
-            
-            if (allTeachers.length === 0) {
-                select.innerHTML = '<option value="">등록된 교사가 없습니다</option>';
-            } else {
-                // 가나다순 정렬
+                allTeachers = data || [];
+                select.innerHTML = '<option value="">-- 교사를 선택하세요 --</option>';
+                
+                if (allTeachers.length === 0) {
+                    select.innerHTML = '<option value="">데이터 없음</option>';
+                    return;
+                }
+
                 allTeachers.sort((a, b) => a.name.localeCompare(b.name));
                 allTeachers.forEach(t => {
                     const opt = document.createElement('option');
@@ -307,18 +304,27 @@
                     opt.dataset.subject = t.subject || '';
                     select.appendChild(opt);
                 });
+            } catch (err) {
+                console.error("교사 명단 로딩 실패:", err);
+                select.innerHTML = '<option value="">데이터 오류 (새로고침 요망)</option>';
+                // 3초 후 자동 재시도 1회
+                setTimeout(fetchAllTeachers, 3000);
             }
         }
 
         async function fetchDeptList() {
-            const { data } = await _supabase.from('t_partition').select('dept');
-            const uniqueDepts = data && data.length > 0 ? [...new Set(data.map(d => d.dept))] : ["교무실"];
-            document.getElementById('dept-dashboard').innerHTML = uniqueDepts.map(dept => `
-                <div class="dept-card" onclick="selectDept('${dept}')">
-                    <div style="font-size: 3rem; margin-bottom:1rem;">🏢</div>
-                    <h3 style="margin:0; color:#fff;">${dept}</h3>
-                </div>
-            `).join('');
+            try {
+                const { data } = await _supabase.from('t_partition').select('dept');
+                const uniqueDepts = data && data.length > 0 ? [...new Set(data.map(d => d.dept))] : ["교무실"];
+                document.getElementById('dept-dashboard').innerHTML = uniqueDepts.map(dept => `
+                    <div class="dept-card" onclick="selectDept('${dept}')">
+                        <div style="font-size: 3rem; margin-bottom:1rem;">🏢</div>
+                        <h3 style="margin:0; color:#fff;">${dept}</h3>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error("부서 목록 로딩 실패:", err);
+            }
         }
 
         function showDashboard() {
@@ -399,16 +405,18 @@
             const layer = document.getElementById('partition-layer');
             const wrapper = document.getElementById('grid-wrapper');
             layer.innerHTML = '';
-            const thickness = 8;
-            const offset = 100;
+            const thickness = 6; // 선 두께를 약간 얇게 조정
+            const offset = 150; // padding과 일치
 
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
 
-            // Horizontal
+            // Horizontal Partitions (행 사이의 가로선)
             for (let r = 0; r <= rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const id = `r${r}c${c}`;
                     const isActive = (partitions.h || []).includes(id);
+                    
+                    // Trigger area
                     const trigger = document.createElement('div');
                     trigger.className = 'partition-trigger';
                     trigger.style.left = `${offset + c * (cardW + gap)}px`;
@@ -416,22 +424,27 @@
                     trigger.style.width = `${cardW}px`; trigger.style.height = `20px`;
                     trigger.onclick = () => togglePartition('h', id);
                     wrapper.appendChild(trigger);
+
                     if (isActive) {
                         const line = document.createElement('div');
                         line.className = 'partition';
-                        line.style.left = `${offset + c * (cardW + gap) - thickness/2}px`;
+                        // 선 길이를 정밀하게 계산: 카드 너비 + 갭의 절반씩 양쪽으로 (연결 부위 깔끔하게)
+                        line.style.left = `${offset + c * (cardW + gap) - (gap/2)}px`;
                         line.style.top = `${offset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.width = `${cardW + gap + thickness}px`; line.style.height = `${thickness}px`;
+                        line.style.width = `${cardW + gap}px`; 
+                        line.style.height = `${thickness}px`;
                         layer.appendChild(line);
                     }
                 }
             }
 
-            // Vertical
+            // Vertical Partitions (열 사이의 세로선)
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c <= cols; c++) {
                     const id = `r${r}c${c}`;
                     const isActive = (partitions.v || []).includes(id);
+                    
+                    // Trigger area
                     const trigger = document.createElement('div');
                     trigger.className = 'partition-trigger';
                     trigger.style.left = `${offset + c * (cardW + gap) - (gap/2) - 10}px`;
@@ -439,12 +452,14 @@
                     trigger.style.width = `20px`; trigger.style.height = `${cardH}px`;
                     trigger.onclick = () => togglePartition('v', id);
                     wrapper.appendChild(trigger);
+
                     if (isActive) {
                         const line = document.createElement('div');
                         line.className = 'partition';
                         line.style.left = `${offset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.top = `${offset + r * (cardH + gap) - thickness/2}px`;
-                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap + thickness}px`;
+                        line.style.top = `${offset + r * (cardH + gap) - (gap/2)}px`;
+                        line.style.width = `${thickness}px`; 
+                        line.style.height = `${cardH + gap}px`;
                         layer.appendChild(line);
                     }
                 }
