@@ -27,7 +27,7 @@
             overflow: hidden;
         }
 
-        /* 로그인 화면 */
+        /* 로그인 섹션 */
         #login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -65,7 +65,7 @@
             cursor: pointer;
         }
 
-        /* 사이드바 */
+        /* 내비게이션 */
         nav {
             width: 260px;
             background: #1e293b;
@@ -93,6 +93,7 @@
         nav label { font-size: 0.8rem; opacity: 0.6; margin-top: 1rem; margin-bottom: 0.2rem; display: block; }
         select, input[type="number"] { width: 100%; padding: 0.6rem; border-radius: 0.4rem; background: #334155; color: white; border: none; box-sizing: border-box; }
 
+        /* 메인 영역 */
         main {
             flex: 1;
             padding: 2rem;
@@ -102,7 +103,6 @@
             position: relative;
         }
 
-        /* 배치도 래퍼 */
         #grid-wrapper {
             position: relative;
             margin-top: 2rem;
@@ -139,13 +139,20 @@
         .seat-card h3 { margin: 0; font-size: 1rem; pointer-events: none; }
         .seat-card p { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; pointer-events: none; }
         .seat-card.empty { border: 1px dashed #cbd5e1; background: rgba(255,255,255,0.4); }
-        
+
+        /* 학생 모드 전용 스타일: 좌표 숨기기 및 배경 투명화 */
+        .mode-student .seat-card.empty {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            pointer-events: none;
+        }
+        .mode-student .seat-card.empty small { display: none; }
+
+        /* 파티션 레이어 */
         #partition-layer {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            bottom: 20px;
+            top: 20px; left: 20px; right: 20px; bottom: 20px;
             pointer-events: none;
             z-index: 20;
         }
@@ -156,38 +163,19 @@
             transition: all 0.2s;
         }
 
-        .partition-v {
-            width: 8px;
-            cursor: pointer;
-            transform: translateX(-4px);
-        }
-        .partition-v.active {
-            border-left: 3px solid var(--partition-active);
-        }
+        .partition-v { width: 8px; cursor: pointer; transform: translateX(-4px); }
+        .partition-v.active { border-left: 3px solid var(--partition-active); }
 
-        .partition-h {
-            height: 8px;
-            cursor: pointer;
-            transform: translateY(-4px);
-        }
-        .partition-h.active {
-            border-top: 3px solid var(--partition-active);
-        }
+        .partition-h { height: 8px; cursor: pointer; transform: translateY(-4px); }
+        .partition-h.active { border-top: 3px solid var(--partition-active); }
 
-        .mode-edit .partition:not(.active) {
-            background: var(--partition-idle);
-        }
-        .mode-edit .partition:hover {
-            background: var(--edit-color) !important;
-            opacity: 0.8;
-        }
+        /* 비편집 모드 시 파티션 처리 */
+        .mode-student .partition, .mode-teacher .partition { pointer-events: none; }
+        .mode-student .partition:not(.active), .mode-teacher .partition:not(.active) { display: none; }
 
-        .mode-student .partition:not(.active) {
-            display: none;
-        }
+        .mode-edit .partition:not(.active) { background: var(--partition-idle); }
+        .mode-edit .partition:hover { background: var(--edit-color) !important; opacity: 0.8; }
 
-        .mode-student .seat-card.assigned:hover { border-color: var(--primary); background: #eef2ff; }
-        
         .save-bar { 
             background: #0e7490; color: white; padding: 0.8rem 1.5rem; 
             display: flex; justify-content: space-between; align-items: center;
@@ -196,9 +184,7 @@
         .config-input { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
         .config-input input { width: 60px !important; }
 
-        #teacher-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .status-badge { padding: 0.5rem 1rem; border-radius: 2rem; background: #dcfce7; color: #166534; font-weight: bold; margin-bottom: 2rem; }
-
+        /* 호출 알림 팝업 */
         #call-popup {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; padding: 3rem 5rem; border-radius: 2rem;
@@ -207,6 +193,7 @@
         #popup-name { font-size: 4rem; font-weight: 900; display: block; }
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1999; }
 
+        /* 편집용 모달 */
         .modal { display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 2rem; border-radius: 1rem; width: 320px; text-align: center; }
         .btn { padding: 0.6rem 1rem; border-radius: 0.4rem; border: none; cursor: pointer; font-weight: bold; }
@@ -216,7 +203,6 @@
 </head>
 <body>
 
-    <!-- 로그인 화면 -->
     <div id="login-overlay">
         <div class="login-box">
             <h2 style="margin-bottom: 1.5rem; color: var(--primary);">스마트 교사 호출기</h2>
@@ -243,7 +229,7 @@
 
         <hr style="width:100%; opacity:0.1; margin: 1rem 0;">
         <label>부서 선택</label>
-        <select id="dept-select" onchange="loadLayout()">
+        <select id="dept-select" onchange="loadDeptLayout()">
             <option value="교무부">교무부</option>
             <option value="1학년부">1학년부</option>
             <option value="2학년부">2학년부</option>
@@ -261,11 +247,11 @@
                     <button class="btn btn-save" onclick="updateGridSize()">적용</button>
                 </div>
                 <div>
-                    <button class="btn btn-save" onclick="saveLayoutChanges()">배치 저장</button>
+                    <button class="btn btn-save" onclick="saveAllSettings()">설정 저장</button>
                 </div>
             </div>
             
-            <h1 id="view-title">교무부 좌석 배치도</h1>
+            <h1 id="view-title">좌석 배치도</h1>
             <p id="view-desc">호출하실 선생님의 자리를 터치해 주세요.</p>
             
             <div id="grid-wrapper">
@@ -274,11 +260,9 @@
             </div>
         </div>
 
-        <div id="teacher-view" style="display: none;">
-            <div id="monitor-view">
-                <div class="status-badge">● 실시간 수신 중</div>
-                <div style="font-size: 2rem; font-weight: 600;">수신 대기 중...</div>
-            </div>
+        <div id="teacher-view" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; flex:1;">
+            <div class="status-badge" style="padding: 0.5rem 1rem; border-radius: 2rem; background: #dcfce7; color: #166534; font-weight: bold; margin-bottom: 2rem;">● 실시간 호출 대기 중</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #64748b;">수신 알림이 여기에 표시됩니다.</div>
         </div>
 
         <div id="overlay" class="overlay"></div>
@@ -297,8 +281,8 @@
     </main>
 
     <script>
-        const SUPABASE_URL = 'https://tonuqhqyeqgjbyeihjid.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // 여기에 Supabase URL 입력
+        const SUPABASE_KEY = 'YOUR_SUPABASE_KEY'; // 여기에 Supabase Anon Key 입력
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
@@ -309,80 +293,54 @@
         let activeEditCoord = { r: 0, c: 0 };
         let realtimeChannel = null;
 
-        // --- 로그인 관련 로직 ---
+        // --- 로그인 시스템 ---
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
             const pw = document.getElementById('login-pw').value;
             const errorEl = document.getElementById('login-error');
 
-            const { data, error } = await _supabase
-                .from('t_user')
-                .select('*')
-                .eq('user_id', id)
-                .eq('user_pw', pw)
-                .single();
+            const { data } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).single();
 
             if (data) {
                 currentUser = data;
-                initAppAfterLogin();
+                initApp();
             } else {
                 errorEl.style.display = 'block';
             }
         }
 
-        function initAppAfterLogin() {
+        function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
 
-            // 권한별 UI 제어
-            // grade: 1(admin), 2(교사), 3(학생)
-            if (currentUser.grade <= 2) {
-                document.getElementById('btn-teacher').style.display = 'block';
-            }
+            // 등급별 메뉴 노출 (1: 관리자, 2: 교사, 3: 학생)
+            if (currentUser.grade <= 2) document.getElementById('btn-teacher').style.display = 'block';
             if (currentUser.grade == 1) {
                 document.getElementById('admin-label').style.display = 'block';
                 document.getElementById('btn-edit').style.display = 'block';
             }
-
-            fetchTeachers().then(() => renderGrid());
+            loadDeptLayout();
         }
 
-        // --- 호출 시간 보정 (KST 기준) ---
-        function getKSTTimestamp() {
-            const now = new Date();
-            const kstOffset = 9 * 60 * 60 * 1000; // 9시간 밀리초
-            const kstDate = new Date(now.getTime() + kstOffset);
-            return kstDate.toISOString().replace('Z', '+09:00');
-        }
-
-        async function switchMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`btn-${mode}`).classList.add('active');
-            document.getElementById('main-content').className = `mode-${mode}`;
-
-            document.getElementById('grid-view').style.display = (mode === 'teacher') ? 'none' : 'block';
-            document.getElementById('teacher-view').style.display = (mode === 'teacher') ? 'flex' : 'none';
-            document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
-
-            if (mode === 'teacher') {
-                stopListening(); startListening(); speak("");
-            } else {
-                stopListening();
-                await fetchTeachers();
-                renderGrid();
+        // --- 레이아웃 및 파티션 데이터 처리 ---
+        async function loadDeptLayout() {
+            const dept = document.getElementById('dept-select').value;
+            
+            // 1. t_partition 테이블에서 설정값 로드
+            const { data: partData } = await _supabase.from('t_partition').select('*').eq('dept', dept).single();
+            if (partData) {
+                rows = partData.rows;
+                cols = partData.cols;
+                partitions = partData.partitions || { v: [], h: [] };
+                document.getElementById('grid-rows').value = rows;
+                document.getElementById('grid-cols').value = cols;
             }
-        }
 
-        async function fetchTeachers() {
-            const { data, error } = await _supabase.from('t_teacher').select('*').order('name');
-            if (!error) localLayout = data;
-        }
+            // 2. 선생님 정보 로드 (전체 로드 후 필터링)
+            const { data: teachData } = await _supabase.from('t_teacher').select('*').order('name');
+            if (teachData) localLayout = teachData;
 
-        function updateGridSize() {
-            rows = parseInt(document.getElementById('grid-rows').value);
-            cols = parseInt(document.getElementById('grid-cols').value);
             renderGrid();
         }
 
@@ -414,6 +372,7 @@
                         card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
                         card.onclick = () => (currentMode === 'edit' ? handleEditClick(r, c, t) : sendCall(t.id, t.name));
                     } else {
+                        // 관리자 모드에서만 좌표(r,c) 노출
                         card.innerHTML = `<small style="color:#cbd5e1">${r},${c}</small>`;
                         card.onclick = () => (currentMode === 'edit' ? handleEditClick(r, c, null) : null);
                     }
@@ -421,22 +380,20 @@
                 }
             }
 
+            // 파티션 렌더링 (가로/세로 모든 가능한 위치)
             for (let r = 0; r <= rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
-                }
+                for (let c = 0; c < cols; c++) createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
             }
             for (let r = 0; r < rows; r++) {
-                for (let c = 0; c <= cols; c++) {
-                    createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
-                }
+                for (let c = 0; c <= cols; c++) createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
             }
         }
 
         function createPartition(r, c, type, parent, w, h, g) {
             const handle = document.createElement('div');
             const id = `r${r}c${c}`;
-            handle.className = `partition partition-${type} ${partitions[type].includes(id) ? 'active' : ''}`;
+            const isActive = partitions[type] && partitions[type].includes(id);
+            handle.className = `partition partition-${type} ${isActive ? 'active' : ''}`;
             
             if (type === 'v') {
                 const leftPos = c * (w + g) - (g / 2);
@@ -455,6 +412,7 @@
             handle.onclick = (e) => {
                 if (currentMode !== 'edit') return;
                 e.stopPropagation();
+                if (!partitions[type]) partitions[type] = [];
                 if (partitions[type].includes(id)) {
                     partitions[type] = partitions[type].filter(i => i !== id);
                     handle.classList.remove('active');
@@ -466,73 +424,69 @@
             parent.appendChild(handle);
         }
 
-        function handleEditClick(r, c, teacher) {
-            if (teacher) {
-                if (confirm(`${teacher.name} 선생님의 배치를 취소하시겠습니까?`)) {
-                    const idx = localLayout.findIndex(t => t.id === teacher.id);
-                    localLayout[idx].row_index = null; 
-                    localLayout[idx].col_index = null;
-                    renderGrid();
-                }
-            } else {
-                activeEditCoord = { r, c };
-                openEditModal();
-            }
-        }
-
-        function openEditModal() {
-            const picker = document.getElementById('teacher-picker');
-            document.getElementById('modal-coord').innerText = `${activeEditCoord.r}, ${activeEditCoord.c} 배정`;
-            picker.innerHTML = '<option value="">-- 선생님 선택 --</option>';
-            localLayout.filter(t => t.row_index === null).forEach(t => {
-                const opt = document.createElement('option'); opt.value = t.id; opt.innerText = t.name;
-                picker.appendChild(opt);
-            });
-            document.getElementById('edit-modal').style.display = 'flex';
-        }
-
-        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
-
-        function applySeatChange() {
-            const tid = document.getElementById('teacher-picker').value;
-            if (!tid) return;
-            const idx = localLayout.findIndex(t => t.id == tid);
-            localLayout[idx].dept = document.getElementById('dept-select').value;
-            localLayout[idx].row_index = activeEditCoord.r;
-            localLayout[idx].col_index = activeEditCoord.c;
-            closeEditModal(); 
+        function updateGridSize() {
+            rows = parseInt(document.getElementById('grid-rows').value);
+            cols = parseInt(document.getElementById('grid-cols').value);
             renderGrid();
         }
 
-        async function saveLayoutChanges() {
-            if (!confirm("현재 배치를 저장하시겠습니까?")) return;
+        // --- 배치 및 파티션 설정 저장 ---
+        async function saveAllSettings() {
+            if (!confirm("현재 배치와 파티션 정보를 데이터베이스에 저장하시겠습니까?")) return;
             const btn = document.querySelector('.btn-save');
             btn.innerText = "저장 중...";
-            
+            const dept = document.getElementById('dept-select').value;
+
             try {
+                // 1. t_teacher 업데이트 (자체 루프 처리 혹은 트랜잭션 권장)
                 for (const t of localLayout) {
                     await _supabase.from('t_teacher').update({
                         dept: t.dept, row_index: t.row_index, col_index: t.col_index
                     }).eq('id', t.id);
                 }
-                alert("성공적으로 저장되었습니다.");
+                
+                // 2. t_partition 업데이트
+                await _supabase.from('t_partition').upsert({
+                    dept: dept,
+                    rows: rows,
+                    cols: cols,
+                    partitions: partitions
+                });
+
+                alert("배치 정보가 안전하게 저장되었습니다.");
                 switchMode('student');
             } catch (err) {
-                alert("저장 실패");
+                alert("저장 중 오류가 발생했습니다.");
+                console.error(err);
             } finally {
-                btn.innerText = "배치 저장";
+                btn.innerText = "설정 저장";
+            }
+        }
+
+        // --- 모드 전환 및 실시간 호출 ---
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            document.getElementById('main-content').className = `mode-${mode}`;
+
+            document.getElementById('grid-view').style.display = (mode === 'teacher') ? 'none' : 'block';
+            document.getElementById('teacher-view').style.display = (mode === 'teacher') ? 'flex' : 'none';
+            document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
+
+            if (mode === 'teacher') {
+                stopListening(); startListening();
+            } else {
+                stopListening();
+                loadDeptLayout();
             }
         }
 
         async function sendCall(tid, name) {
-            // call_time을 KST 기준으로 생성하여 함께 전송
-            const callTime = getKSTTimestamp();
-            const { error } = await _supabase.from('t_calls').insert([{ 
-                id: tid,
-                call_time: callTime
-            }]);
+            const now = new Date();
+            const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)).toISOString().replace('Z', '+09:00');
+            const { error } = await _supabase.from('t_calls').insert([{ id: tid, call_time: kstTime }]);
             if (!error) alert(`${name} 선생님을 호출했습니다.`);
-            else console.error("호출 오류:", error);
         }
 
         function startListening() {
@@ -556,13 +510,46 @@
         }
 
         function speak(t) {
-            if (!t) return; window.speechSynthesis.cancel();
+            window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR';
             window.speechSynthesis.speak(u);
         }
 
-        function loadLayout() { renderGrid(); }
+        function handleEditClick(r, c, teacher) {
+            if (teacher) {
+                if (confirm(`${teacher.name} 선생님 배치를 해제할까요?`)) {
+                    const idx = localLayout.findIndex(t => t.id === teacher.id);
+                    localLayout[idx].row_index = null; localLayout[idx].col_index = null;
+                    renderGrid();
+                }
+            } else {
+                activeEditCoord = { r, c };
+                openEditModal();
+            }
+        }
 
+        function openEditModal() {
+            const picker = document.getElementById('teacher-picker');
+            document.getElementById('modal-coord').innerText = `${activeEditCoord.r}, ${activeEditCoord.c} 배정`;
+            picker.innerHTML = '<option value="">-- 선생님 선택 --</option>';
+            localLayout.filter(t => t.row_index === null).forEach(t => {
+                const opt = document.createElement('option'); opt.value = t.id; opt.innerText = t.name;
+                picker.appendChild(opt);
+            });
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function applySeatChange() {
+            const tid = document.getElementById('teacher-picker').value;
+            if (!tid) return;
+            const idx = localLayout.findIndex(t => t.id == tid);
+            localLayout[idx].dept = document.getElementById('dept-select').value;
+            localLayout[idx].row_index = activeEditCoord.r;
+            localLayout[idx].col_index = activeEditCoord.c;
+            closeEditModal(); renderGrid();
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
