@@ -124,6 +124,7 @@
         select, input {
             width: 100%; padding: 1rem; margin: 10px 0; border-radius: 0.8rem;
             background: #1e293b; border: 1px solid #334155; color: white;
+            font-size: 1rem;
         }
 
         #toast {
@@ -169,13 +170,11 @@
     </nav>
 
     <main id="main-content" style="display: none;">
-        <!-- Dept Selection -->
         <div id="dashboard-view">
             <h1 style="font-size: 2.5rem; font-weight:900;">호출할 부서를 선택하세요</h1>
             <div id="dept-dashboard"></div>
         </div>
 
-        <!-- Grid View -->
         <div id="grid-view" style="display: none;">
             <div id="edit-header" style="display: none; background: #1e293b; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1rem; align-items: center; gap: 20px; border: 1px solid var(--primary);">
                 <div style="display:flex; align-items:center; gap:10px;">
@@ -202,7 +201,6 @@
             </div>
         </div>
 
-        <!-- Teacher View -->
         <div id="teacher-view" style="display: none; flex: 1; align-items: center; justify-content: center;">
             <div style="text-align: center; background: var(--sidebar-bg); padding: 4rem; border-radius: 3rem;">
                 <h1 id="monitor-status" style="font-size: 3rem; margin: 0;">부서명</h1>
@@ -210,7 +208,6 @@
             </div>
         </div>
 
-        <!-- Alert Popup -->
         <div id="call-popup">
             <h1 id="popup-name" style="font-size: 7rem; margin: 0;">홍길동</h1>
             <p style="font-size: 2rem; color: var(--text-dim);">선생님, 호출입니다!</p>
@@ -220,15 +217,17 @@
     <!-- Teacher Selection Modal -->
     <div id="edit-modal">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-top:0;">선생님 배치</h3>
-            <label>교사 선택</label>
-            <select id="select-teacher-list">
-                <option value="">-- 교사를 선택하세요 --</option>
-            </select>
+            <h3 id="modal-title" style="margin-top:0; color:white;">선생님 배치</h3>
+            <div style="margin-top: 20px;">
+                <label style="color:var(--text-dim); font-size: 0.9rem;">교사 선택</label>
+                <select id="select-teacher-list">
+                    <option value="">-- 불러오는 중... --</option>
+                </select>
+            </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="applyTeacher()" style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">적용</button>
-                <button onclick="removeTeacher()" id="btn-remove-teacher" style="flex:1; padding:10px; background:#ef4444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">삭제</button>
-                <button onclick="closeModal()" style="flex:1; padding:10px; background:#334155; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">취소</button>
+                <button onclick="applyTeacher()" style="flex:1; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">적용</button>
+                <button onclick="removeTeacher()" id="btn-remove-teacher" style="flex:1; padding:12px; background:#ef4444; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">삭제</button>
+                <button onclick="closeModal()" style="flex:1; padding:12px; background:#334155; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">취소</button>
             </div>
         </div>
     </div>
@@ -248,9 +247,14 @@
             const pw = document.getElementById('login-pw').value;
             if(!id || !pw) return;
 
-            const { data } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
-            if (data) { currentUser = data; initApp(); } 
-            else { document.getElementById('login-error').innerText = "접속 정보 오류"; document.getElementById('login-error').style.display = 'block'; }
+            const { data, error } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
+            if (data) { 
+                currentUser = data; 
+                initApp(); 
+            } else { 
+                document.getElementById('login-error').innerText = "접속 정보 오류"; 
+                document.getElementById('login-error').style.display = 'block'; 
+            }
         }
 
         async function initApp() {
@@ -258,18 +262,8 @@
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
 
-            // Load all teacher list from database for dropdown
-            const { data } = await _supabase.from('t_teacher_list').select('*');
-            allTeachers = data || [];
-            const select = document.getElementById('select-teacher-list');
-            select.innerHTML = '<option value="">-- 교사를 선택하세요 --</option>';
-            allTeachers.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.name;
-                opt.text = `${t.name} (${t.subject || '담당'})`;
-                opt.dataset.subject = t.subject || '';
-                select.appendChild(opt);
-            });
+            // 1. 교사 목록을 먼저 확실히 불러옵니다.
+            await fetchAllTeachers();
 
             if (currentUser.grade == 1) {
                 document.getElementById('btn-student').style.display = 'block';
@@ -287,9 +281,38 @@
             window.addEventListener('resize', autoScale);
         }
 
+        // 전체 교사 명단을 가져와 드롭다운에 미리 넣어두는 함수
+        async function fetchAllTeachers() {
+            const { data, error } = await _supabase.from('t_teacher_list').select('*');
+            const select = document.getElementById('select-teacher-list');
+            
+            if (error) {
+                console.error("교사 명단 로딩 실패:", error);
+                select.innerHTML = '<option value="">데이터 오류</option>';
+                return;
+            }
+
+            allTeachers = data || [];
+            select.innerHTML = '<option value="">-- 교사를 선택하세요 --</option>';
+            
+            if (allTeachers.length === 0) {
+                select.innerHTML = '<option value="">등록된 교사가 없습니다</option>';
+            } else {
+                // 가나다순 정렬
+                allTeachers.sort((a, b) => a.name.localeCompare(b.name));
+                allTeachers.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    opt.text = `${t.name} (${t.subject || '담당'})`;
+                    opt.dataset.subject = t.subject || '';
+                    select.appendChild(opt);
+                });
+            }
+        }
+
         async function fetchDeptList() {
             const { data } = await _supabase.from('t_partition').select('dept');
-            const uniqueDepts = data ? [...new Set(data.map(d => d.dept))] : ["교무실"];
+            const uniqueDepts = data && data.length > 0 ? [...new Set(data.map(d => d.dept))] : ["교무실"];
             document.getElementById('dept-dashboard').innerHTML = uniqueDepts.map(dept => `
                 <div class="dept-card" onclick="selectDept('${dept}')">
                     <div style="font-size: 3rem; margin-bottom:1rem;">🏢</div>
@@ -334,8 +357,8 @@
         }
 
         function updateGridSize() {
-            rows = parseInt(document.getElementById('input-rows').value);
-            cols = parseInt(document.getElementById('input-cols').value);
+            rows = parseInt(document.getElementById('input-rows').value) || 4;
+            cols = parseInt(document.getElementById('input-cols').value) || 6;
             renderGrid();
         }
 
@@ -378,6 +401,8 @@
             layer.innerHTML = '';
             const thickness = 8;
             const offset = 100;
+
+            document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
 
             // Horizontal
             for (let r = 0; r <= rows; r++) {
@@ -428,16 +453,18 @@
 
         function togglePartition(type, id) {
             if (currentMode !== 'edit') return;
-            const list = partitions[type] || [];
+            if (!partitions[type]) partitions[type] = [];
+            const list = partitions[type];
             if (list.includes(id)) partitions[type] = list.filter(x => x !== id);
-            else { if(!partitions[type]) partitions[type] = []; partitions[type].push(id); }
+            else partitions[type].push(id);
             renderGrid();
         }
 
         function openEditModal(r, c, t) {
             activeEditCell = { r, c };
             document.getElementById('edit-modal').style.display = 'flex';
-            document.getElementById('modal-title').innerText = `${r+1}행 ${c+1}열 배치`;
+            document.getElementById('modal-title').innerText = `${r+1}행 ${c+1}열 배치 설정`;
+            
             const select = document.getElementById('select-teacher-list');
             select.value = t ? t.name : "";
             document.getElementById('btn-remove-teacher').style.display = t ? 'block' : 'none';
@@ -449,6 +476,7 @@
             const select = document.getElementById('select-teacher-list');
             const name = select.value;
             if (!name) return closeModal();
+            
             const selectedOption = select.options[select.selectedIndex];
             const subject = selectedOption.dataset.subject || "";
 
@@ -472,22 +500,36 @@
         }
 
         async function saveAllSettings() {
-            showToast("저장 중...");
-            await _supabase.from('t_partition').upsert({
-                dept: currentDept,
-                rows: rows,
-                cols: cols,
-                partitions: partitions
-            }, { onConflict: 'dept' });
+            showToast("데이터 저장 중...");
+            try {
+                await _supabase.from('t_partition').upsert({
+                    dept: currentDept,
+                    rows: rows,
+                    cols: cols,
+                    partitions: partitions
+                }, { onConflict: 'dept' });
 
-            await _supabase.from('t_teacher').delete().eq('dept', currentDept);
-            if(localLayout.length > 0) await _supabase.from('t_teacher').insert(localLayout);
-            showToast("저장 완료");
+                await _supabase.from('t_teacher').delete().eq('dept', currentDept);
+                if(localLayout.length > 0) {
+                    const saveTarget = localLayout.map(t => ({
+                        name: t.name,
+                        subject: t.subject,
+                        dept: currentDept,
+                        row_index: t.row_index,
+                        col_index: t.col_index
+                    }));
+                    await _supabase.from('t_teacher').insert(saveTarget);
+                }
+                showToast("저장 완료");
+            } catch (err) {
+                console.error(err);
+                showToast("저장 실패");
+            }
         }
 
         async function sendCall(id, name, dept) {
             showToast(`${name} 선생님 호출 중...`);
-            await _supabase.from('t_calls').insert([{ id, name, dept, call_time: new Date().toISOString() }]);
+            await _supabase.from('t_calls').insert([{ id: 'C'+Date.now(), name, dept, call_time: new Date().toISOString() }]);
             showToast("호출 완료");
             speak(`${name} 선생님을 호출했습니다.`);
         }
@@ -518,7 +560,9 @@
         function switchMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            if(document.getElementById(`btn-${mode}`)) document.getElementById(`btn-${mode}`).classList.add('active');
+            const btn = document.getElementById(`btn-${mode}`);
+            if(btn) btn.classList.add('active');
+            
             document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
             showDashboard();
         }
