@@ -25,6 +25,7 @@
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0; background-color: var(--bg); color: var(--text-main);
             display: flex; height: 100vh; width: 100vw; overflow: hidden;
+            user-select: none; -webkit-user-select: none;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -61,10 +62,10 @@
         .menu-item {
             padding: 1.2rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.8rem;
             color: var(--text-dim); font-weight: 700; transition: 0.2s;
-            font-size: 1.1rem;
-            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
             border: 1px solid transparent;
         }
+        .menu-item:hover { background: rgba(255,255,255,0.05); }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
         /* 메인 컨텐츠 영역 */
@@ -110,7 +111,6 @@
         .seat-card p { font-size: 1.8rem; color: var(--primary); margin: 12px 0 0 0; font-weight: 800; }
         .seat-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
-        .seat-card.empty h3, .seat-card.empty p { display: none; }
 
         /* 파티션 */
         .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; border-radius: 3px; }
@@ -160,17 +160,18 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false">
 
     <div id="toast">알림</div>
 
+    <!-- v2 로그인 오버레이 (엔터키 지원 추가) -->
     <div id="login-overlay">
         <div class="login-box">
             <h1 style="color:white; font-size:2.5rem; font-weight:900; margin-bottom:0.5rem;">교사 호출 시스템</h1>
             <p style="color:var(--text-dim); margin-bottom:3rem; font-size:1.2rem; font-weight:700;">장유고등학교</p>
             <input type="text" id="login-id" placeholder="아이디">
             <input type="password" id="login-pw" placeholder="비밀번호">
-            <button onclick="attemptLogin()">시스템 접속</button>
+            <button id="login-submit-btn">시스템 접속</button>
             <p id="login-error" style="color: var(--danger); margin-top: 1.5rem; display: none; font-weight: 700;"></p>
         </div>
     </div>
@@ -254,328 +255,338 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://tonuqhqyeqgjbyeihjid.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        (function() {
+            const SUPABASE_URL = 'https://tonuqhqyeqgjbyeihjid.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
+            const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, currentMode = 'student', currentDept = null;
-        let gridRows = 4, gridCols = 6, partitions = { v: [], h: [] };
-        let localTeachers = [], activeEditCell = { r: 0, c: 0 }, realTimeChannel = null;
-        let isCallingLock = false;
+            let currentUser = null, currentMode = 'student', currentDept = null;
+            let gridRows = 4, gridCols = 6, partitions = { v: [], h: [] };
+            let localTeachers = [], activeEditCell = { r: 0, c: 0 }, realTimeChannel = null;
+            let isCallingLock = false;
 
-        // 효과음 생성기 (전자음)
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playChime() {
-            const playNote = (freq, start, duration) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, start);
-                gain.gain.setValueAtTime(0.3, start); // 띵동 소리 크기 조절 (0.1 -> 0.3)
-                gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(start);
-                osc.stop(start + duration);
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // 1. 초기화 및 이벤트 리스너 등록
+            window.onload = function() {
+                document.getElementById('login-submit-btn').onclick = attemptLogin;
+                
+                // 로그인 입력창 엔터키 대응
+                const loginId = document.getElementById('login-id');
+                const loginPw = document.getElementById('login-pw');
+                [loginId, loginPw].forEach(el => el.onkeydown = e => { if(e.key === 'Enter') attemptLogin(); });
+
+                window.addEventListener('resize', autoScale);
             };
-            const now = audioCtx.currentTime;
-            playNote(783.99, now, 0.8); // G5 (띵)
-            playNote(659.25, now + 0.4, 1.2); // E5 (동)
-        }
 
-        // 한국 시간 포맷터 (YYYY-MM-DD HH:mm:ss.SS)
-        function getKSTTime() {
-            const now = new Date();
-            const offset = now.getTimezoneOffset() * 60000;
-            const kstDate = new Date(now.getTime() - offset + (9 * 3600000)); // 현재 UTC + 9시간
-            
-            const pad = (n) => n.toString().padStart(2, '0');
-            const ms = now.getMilliseconds().toString().padStart(3, '0').substring(0, 2); // 소수점 둘째자리까지
-
-            const year = now.getFullYear();
-            const month = pad(now.getMonth() + 1);
-            const day = pad(now.getDate());
-            const hours = pad(now.getHours());
-            const minutes = pad(now.getMinutes());
-            const seconds = pad(now.getSeconds());
-
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
-        }
-
-        async function attemptLogin() {
-            const id = document.getElementById('login-id').value;
-            const pw = document.getElementById('login-pw').value;
-            const { data, error } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
-            if (data) { currentUser = data; initApp(); } 
-            else { document.getElementById('login-error').innerText = "계정 정보가 일치하지 않습니다."; document.getElementById('login-error').style.display = 'block'; }
-        }
-
-        async function initApp() {
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('sidebar').style.display = 'flex';
-            document.getElementById('main-content').style.display = 'flex';
-            await fetchDeptList();
-
-            if (currentUser.grade == 1) { 
-                document.getElementById('btn-student').style.display = 'flex';
-                document.getElementById('btn-teacher').style.display = 'flex';
-                document.getElementById('btn-edit').style.display = 'flex';
-                switchMode('student');
-            } else if (currentUser.grade == 2) { 
-                document.getElementById('btn-teacher').style.display = 'flex';
-                switchMode('teacher');
-            } else { 
-                document.getElementById('btn-student').style.display = 'flex';
-                switchMode('student');
+            function playChime() {
+                const playNote = (freq, start, duration) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.3, start); 
+                    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                };
+                const now = audioCtx.currentTime;
+                playNote(783.99, now, 0.8); // G5
+                playNote(659.25, now + 0.4, 1.2); // E5
             }
-            window.addEventListener('resize', autoScale);
-        }
 
-        async function fetchDeptList() {
-            const { data } = await _supabase.from('t_dept').select('name');
-            const container = document.getElementById('dept-dashboard');
-            if(!data) return;
-            container.innerHTML = data.map(dept => `
-                <div class="dept-card" onclick="selectDept('${dept.name}')">
-                    <div style="font-size: 4rem; margin-bottom:1.5rem;">🏢</div>
-                    <h3>${dept.name}</h3>
-                </div>
-            `).join('');
-        }
+            function getKSTTime() {
+                const now = new Date();
+                const offset = now.getTimezoneOffset() * 60000;
+                const kstDate = new Date(now.getTime() - offset + (9 * 3600000));
+                
+                const pad = (n) => n.toString().padStart(2, '0');
+                const ms = now.getMilliseconds().toString().padStart(3, '0').substring(0, 2);
 
-        async function selectDept(deptName) {
-            currentDept = deptName;
-            document.getElementById('view-title').innerText = deptName;
-            document.getElementById('dashboard-view').style.display = 'none';
-            
-            const instruction = document.getElementById('call-instruction');
-            instruction.style.display = (currentMode === 'student') ? 'block' : 'none';
-
-            if (currentMode === 'teacher') {
-                document.getElementById('teacher-view').style.display = 'flex';
-                document.getElementById('monitor-status').innerText = deptName;
-                startListening();
-            } else {
-                document.getElementById('grid-view').style.display = 'flex';
-                await loadDeptData();
+                return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
             }
-        }
 
-        async function loadDeptData() {
-            const { data: pData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
-            if (pData) { gridRows = pData.rows || 4; gridCols = pData.cols || 6; partitions = pData.partitions || { v: [], h: [] }; }
-            else { gridRows = 4; gridCols = 6; partitions = { v: [], h: [] }; }
-            const { data: tData } = await _supabase.from('t_teacher').select('*').eq('dept', currentDept);
-            localTeachers = tData || [];
-            renderGrid();
-        }
+            async function attemptLogin() {
+                const id = document.getElementById('login-id').value;
+                const pw = document.getElementById('login-pw').value;
+                if(!id || !pw) return;
 
-        function renderGrid() {
-            const container = document.getElementById('grid-container');
-            const wrapper = document.getElementById('grid-wrapper');
-            container.innerHTML = '';
-            if (currentMode === 'edit') wrapper.classList.add('edit-mode'); else wrapper.classList.remove('edit-mode');
-            
-            const gap = 20, cardW = 200, cardH = 160;
-            container.style.gridTemplateRows = `repeat(${gridRows}, ${cardH}px)`;
-            container.style.gridTemplateColumns = `repeat(${gridCols}, ${cardW}px)`;
-            container.style.gap = `${gap}px`;
-
-            for (let r = 0; r < gridRows; r++) {
-                for (let c = 0; c < gridCols; c++) {
-                    const teacher = localTeachers.find(t => t.row_index === r && t.col_index === c);
-                    const seat = document.createElement('div');
-                    seat.className = teacher ? 'seat-card' : 'seat-card empty';
-                    if(isCallingLock && currentMode === 'student') seat.classList.add('disabled');
-                    if (teacher) {
-                        seat.innerHTML = `<h3>${teacher.name}</h3><p>${teacher.subject || ''}</p>`;
-                        seat.onclick = () => (currentMode === 'edit') ? openEditModal(r, c, teacher) : initiateCall(teacher.name);
-                    } else if (currentMode === 'edit') {
-                        seat.onclick = () => openEditModal(r, c, null);
-                    }
-                    container.appendChild(seat);
+                const { data } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
+                if (data) { 
+                    currentUser = data; 
+                    initApp(); 
+                } else { 
+                    const err = document.getElementById('login-error');
+                    err.innerText = "계정 정보가 일치하지 않습니다."; 
+                    err.style.display = 'block'; 
                 }
             }
-            renderPartitions(cardW, cardH, gap);
-            setTimeout(autoScale, 100);
-        }
 
-        async function initiateCall(name) {
-            if(isCallingLock) return;
-            isCallingLock = true;
-            renderGrid();
-            const popup = document.getElementById('call-popup');
-            const pName = document.getElementById('popup-name');
-            const pStatus = document.getElementById('popup-status');
-            pName.innerText = name;
-            pStatus.innerText = "선생님을 호출 중입니다...";
-            pStatus.style.color = "var(--primary)";
-            popup.style.display = 'flex';
-            
-            // 데이터베이스에 한국 시간 로그 남기기
-            await _supabase.from('t_calls').insert([{ 
-                name, 
-                dept: currentDept, 
-                call_time: getKSTTime() 
-            }]);
+            async function initApp() {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('main-content').style.display = 'flex';
+                await fetchDeptList();
 
-            setTimeout(() => { popup.style.display = 'none'; isCallingLock = false; renderGrid(); }, 3000);
-        }
+                if (currentUser.grade == 1) { 
+                    ['btn-student', 'btn-teacher', 'btn-edit'].forEach(id => document.getElementById(id).style.display = 'flex');
+                    switchMode('student');
+                } else if (currentUser.grade == 2) { 
+                    document.getElementById('btn-teacher').style.display = 'flex';
+                    switchMode('teacher');
+                } else { 
+                    document.getElementById('btn-student').style.display = 'flex';
+                    switchMode('student');
+                }
+            }
 
-        function triggerCallEffect(name) {
-            if(currentMode !== 'teacher') return;
-            const popup = document.getElementById('call-popup');
-            const pName = document.getElementById('popup-name');
-            const pStatus = document.getElementById('popup-status');
-            pName.innerText = name;
-            pStatus.innerText = "선생님, 호출입니다!";
-            pStatus.style.color = "var(--text-dim)";
-            popup.style.display = 'flex';
-            
-            playChime(); // 강화된 볼륨의 효과음
-            
-            setTimeout(() => {
-                const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
-                msg.lang = 'ko-KR'; 
-                msg.rate = 0.9;
-                window.speechSynthesis.speak(msg);
-            }, 600);
+            async function fetchDeptList() {
+                const { data } = await _supabase.from('t_dept').select('name');
+                const container = document.getElementById('dept-dashboard');
+                if(!data) return;
+                container.innerHTML = data.map(dept => `
+                    <div class="dept-card" onclick="selectDept('${dept.name}')">
+                        <div style="font-size: 4rem; margin-bottom:1.5rem;">🏢</div>
+                        <h3>${dept.name}</h3>
+                    </div>
+                `).join('');
+            }
 
-            setTimeout(() => { popup.style.display = 'none'; }, 6000);
-        }
+            // 전역 노출이 필요한 함수들 (onclick 핸들러용)
+            window.selectDept = async function(deptName) {
+                currentDept = deptName;
+                document.getElementById('view-title').innerText = deptName;
+                document.getElementById('dashboard-view').style.display = 'none';
+                
+                const instruction = document.getElementById('call-instruction');
+                instruction.style.display = (currentMode === 'student') ? 'block' : 'none';
 
-        function renderPartitions(cardW, cardH, gap) {
-            const layer = document.getElementById('partition-layer');
-            const wrapper = document.getElementById('grid-wrapper');
-            layer.innerHTML = '';
-            document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
-            const thickness = 6;
-            const extraLength = 4;
+                if (currentMode === 'teacher') {
+                    document.getElementById('teacher-view').style.display = 'flex';
+                    document.getElementById('monitor-status').innerText = deptName;
+                    startListening();
+                } else {
+                    document.getElementById('grid-view').style.display = 'flex';
+                    await loadDeptData();
+                }
+            };
 
-            for (let r = 0; r <= gridRows; r++) {
-                for (let c = 0; c < gridCols; c++) {
-                    const id = `r${r}c${c}`;
-                    if (currentMode === 'edit') {
-                        const trg = document.createElement('div');
-                        trg.className = 'partition-trigger';
-                        trg.style.left = `${c * (cardW + gap)}px`;
-                        trg.style.top = `${r * (cardH + gap) - (gap/2) - 15}px`;
-                        trg.style.width = `${cardW}px`; trg.style.height = `30px`;
-                        trg.onclick = () => togglePartition('h', id);
-                        wrapper.appendChild(trg);
+            async function loadDeptData() {
+                const { data: pData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
+                if (pData) { 
+                    gridRows = pData.rows || 4; 
+                    gridCols = pData.cols || 6; 
+                    partitions = pData.partitions || { v: [], h: [] }; 
+                } else { 
+                    gridRows = 4; gridCols = 6; partitions = { v: [], h: [] }; 
+                }
+                const { data: tData } = await _supabase.from('t_teacher').select('*').eq('dept', currentDept);
+                localTeachers = tData || [];
+                renderGrid();
+            }
+
+            function renderGrid() {
+                const container = document.getElementById('grid-container');
+                const wrapper = document.getElementById('grid-wrapper');
+                container.innerHTML = '';
+                if (currentMode === 'edit') wrapper.classList.add('edit-mode'); else wrapper.classList.remove('edit-mode');
+                
+                const gap = 20, cardW = 200, cardH = 160;
+                container.style.gridTemplateRows = `repeat(${gridRows}, ${cardH}px)`;
+                container.style.gridTemplateColumns = `repeat(${gridCols}, ${cardW}px)`;
+                container.style.gap = `${gap}px`;
+
+                for (let r = 0; r < gridRows; r++) {
+                    for (let c = 0; c < gridCols; c++) {
+                        const teacher = localTeachers.find(t => t.row_index === r && t.col_index === c);
+                        const seat = document.createElement('div');
+                        seat.className = teacher ? 'seat-card' : 'seat-card empty';
+                        if(isCallingLock && currentMode === 'student') seat.classList.add('disabled');
+                        
+                        if (teacher) {
+                            seat.innerHTML = `<h3>${teacher.name}</h3><p>${teacher.subject || ''}</p>`;
+                            seat.onclick = () => (currentMode === 'edit') ? openEditModal(r, c, teacher) : initiateCall(teacher.name);
+                        } else if (currentMode === 'edit') {
+                            seat.onclick = () => openEditModal(r, c, null);
+                        }
+                        container.appendChild(seat);
                     }
-                    if ((partitions.h || []).includes(id)) {
-                        const line = document.createElement('div');
-                        line.className = 'partition';
-                        line.style.left = `${c * (cardW + gap) - (gap/2) - (extraLength/2)}px`;
-                        line.style.top = `${r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.width = `${cardW + gap + extraLength}px`; line.style.height = `${thickness}px`;
-                        layer.appendChild(line);
+                }
+                renderPartitions(cardW, cardH, gap);
+                setTimeout(autoScale, 100);
+            }
+
+            async function initiateCall(name) {
+                if(isCallingLock) return;
+                isCallingLock = true;
+                renderGrid();
+                const popup = document.getElementById('call-popup');
+                document.getElementById('popup-name').innerText = name;
+                document.getElementById('popup-status').innerText = "선생님을 호출 중입니다...";
+                document.getElementById('popup-status').style.color = "var(--primary)";
+                popup.style.display = 'flex';
+                
+                await _supabase.from('t_calls').insert([{ name, dept: currentDept, call_time: getKSTTime() }]);
+                setTimeout(() => { popup.style.display = 'none'; isCallingLock = false; renderGrid(); }, 3000);
+            }
+
+            function triggerCallEffect(name) {
+                if(currentMode !== 'teacher') return;
+                const popup = document.getElementById('call-popup');
+                document.getElementById('popup-name').innerText = name;
+                document.getElementById('popup-status').innerText = "선생님, 호출입니다!";
+                document.getElementById('popup-status').style.color = "var(--text-dim)";
+                popup.style.display = 'flex';
+                
+                playChime();
+                
+                if ('speechSynthesis' in window) {
+                    setTimeout(() => {
+                        const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
+                        msg.lang = 'ko-KR'; msg.rate = 0.9;
+                        window.speechSynthesis.speak(msg);
+                    }, 600);
+                }
+
+                setTimeout(() => { popup.style.display = 'none'; }, 6000);
+            }
+
+            function renderPartitions(cardW, cardH, gap) {
+                const layer = document.getElementById('partition-layer');
+                const wrapper = document.getElementById('grid-wrapper');
+                layer.innerHTML = '';
+                document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
+                const thickness = 6;
+                const extraLength = 4;
+
+                for (let r = 0; r <= gridRows; r++) {
+                    for (let c = 0; c < gridCols; c++) {
+                        const id = `r${r}c${c}`;
+                        if (currentMode === 'edit') {
+                            const trg = document.createElement('div');
+                            trg.className = 'partition-trigger';
+                            trg.style.left = `${c * (cardW + gap)}px`;
+                            trg.style.top = `${r * (cardH + gap) - (gap/2) - 15}px`;
+                            trg.style.width = `${cardW}px`; trg.style.height = `30px`;
+                            trg.onclick = () => togglePartition('h', id);
+                            wrapper.appendChild(trg);
+                        }
+                        if ((partitions.h || []).includes(id)) {
+                            const line = document.createElement('div');
+                            line.className = 'partition';
+                            line.style.left = `${c * (cardW + gap) - (gap/2) - (extraLength/2)}px`;
+                            line.style.top = `${r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
+                            line.style.width = `${cardW + gap + extraLength}px`; line.style.height = `${thickness}px`;
+                            layer.appendChild(line);
+                        }
+                    }
+                }
+                for (let r = 0; r < gridRows; r++) {
+                    for (let c = 0; c <= gridCols; c++) {
+                        const id = `r${r}c${c}`;
+                        if (currentMode === 'edit') {
+                            const trg = document.createElement('div');
+                            trg.className = 'partition-trigger';
+                            trg.style.left = `${c * (cardW + gap) - (gap/2) - 15}px`;
+                            trg.style.top = `${r * (cardH + gap)}px`;
+                            trg.style.width = `30px`; trg.style.height = `${cardH}px`;
+                            trg.onclick = () => togglePartition('v', id);
+                            wrapper.appendChild(trg);
+                        }
+                        if ((partitions.v || []).includes(id)) {
+                            const line = document.createElement('div');
+                            line.className = 'partition';
+                            line.style.left = `${c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
+                            line.style.top = `${r * (cardH + gap) - (gap/2) - (extraLength/2)}px`;
+                            line.style.width = `${thickness}px`; line.style.height = `${cardH + gap + extraLength}px`;
+                            layer.appendChild(line);
+                        }
                     }
                 }
             }
-            for (let r = 0; r < gridRows; r++) {
-                for (let c = 0; c <= gridCols; c++) {
-                    const id = `r${r}c${c}`;
-                    if (currentMode === 'edit') {
-                        const trg = document.createElement('div');
-                        trg.className = 'partition-trigger';
-                        trg.style.left = `${c * (cardW + gap) - (gap/2) - 15}px`;
-                        trg.style.top = `${r * (cardH + gap)}px`;
-                        trg.style.width = `30px`; trg.style.height = `${cardH}px`;
-                        trg.onclick = () => togglePartition('v', id);
-                        wrapper.appendChild(trg);
-                    }
-                    if ((partitions.v || []).includes(id)) {
-                        const line = document.createElement('div');
-                        line.className = 'partition';
-                        line.style.left = `${c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.top = `${r * (cardH + gap) - (gap/2) - (extraLength/2)}px`;
-                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap + extraLength}px`;
-                        layer.appendChild(line);
-                    }
-                }
+
+            function togglePartition(type, id) {
+                if (!partitions[type]) partitions[type] = [];
+                if (partitions[type].includes(id)) partitions[type] = partitions[type].filter(x => x !== id);
+                else partitions[type].push(id);
+                renderGrid();
             }
-        }
 
-        function togglePartition(type, id) {
-            if (!partitions[type]) partitions[type] = [];
-            if (partitions[type].includes(id)) partitions[type] = partitions[type].filter(x => x !== id);
-            else partitions[type].push(id);
-            renderGrid();
-        }
+            function openEditModal(r, c, teacher) {
+                activeEditCell = { r, c };
+                document.getElementById('modal-pos').innerText = `${r + 1}행 ${c + 1}열 설정 중`;
+                const dropdown = document.getElementById('teacher-dropdown');
+                dropdown.innerHTML = '<option value="">좌석 비우기</option>';
+                localTeachers.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id; opt.innerText = `${t.name} (${t.subject || ''})`;
+                    if (teacher && t.id === teacher.id) opt.selected = true;
+                    dropdown.appendChild(opt);
+                });
+                document.getElementById('edit-modal').style.display = 'flex';
+            }
 
-        function openEditModal(r, c, teacher) {
-            activeEditCell = { r, c };
-            document.getElementById('modal-pos').innerText = `${r + 1}행 ${c + 1}열 설정 중`;
-            const dropdown = document.getElementById('teacher-dropdown');
-            dropdown.innerHTML = '<option value="">좌석 비우기</option>';
-            localTeachers.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id; opt.innerText = `${t.name} (${t.subject || ''})`;
-                if (teacher && t.id === teacher.id) opt.selected = true;
-                dropdown.appendChild(opt);
-            });
-            document.getElementById('edit-modal').style.display = 'flex';
-        }
+            window.closeModal = () => document.getElementById('edit-modal').style.display = 'none';
+            window.applyTeacher = function() {
+                const selectedId = document.getElementById('teacher-dropdown').value;
+                localTeachers.forEach(t => { if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) { t.row_index = null; t.col_index = null; } });
+                if (selectedId) { const target = localTeachers.find(t => t.id == selectedId); target.row_index = activeEditCell.r; target.col_index = activeEditCell.c; }
+                renderGrid(); closeModal();
+            };
+            window.removeTeacher = function() { localTeachers.forEach(t => { if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) { t.row_index = null; t.col_index = null; } }); renderGrid(); closeModal(); };
 
-        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
-        function applyTeacher() {
-            const selectedId = document.getElementById('teacher-dropdown').value;
-            localTeachers.forEach(t => { if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) { t.row_index = null; t.col_index = null; } });
-            if (selectedId) { const target = localTeachers.find(t => t.id == selectedId); target.row_index = activeEditCell.r; target.col_index = activeEditCell.c; }
-            renderGrid(); closeModal();
-        }
-        function removeTeacher() { localTeachers.forEach(t => { if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) { t.row_index = null; t.col_index = null; } }); renderGrid(); closeModal(); }
+            window.updateGridSize = function() {
+                gridRows = parseInt(document.getElementById('input-rows').value) || 4;
+                gridCols = parseInt(document.getElementById('input-cols').value) || 6;
+                renderGrid();
+            };
 
-        function updateGridSize() {
-            gridRows = parseInt(document.getElementById('input-rows').value) || 4;
-            gridCols = parseInt(document.getElementById('input-cols').value) || 6;
-            renderGrid();
-        }
+            window.saveAllSettings = async function() {
+                showToast("저장 중...");
+                await _supabase.from('t_partition').upsert({ dept: currentDept, rows: gridRows, cols: gridCols, partitions: partitions });
+                for (const t of localTeachers) await _supabase.from('t_teacher').update({ row_index: t.row_index, col_index: t.col_index }).eq('id', t.id);
+                showToast("성공적으로 저장되었습니다.");
+            };
 
-        async function saveAllSettings() {
-            showToast("저장 중...");
-            await _supabase.from('t_partition').upsert({ dept: currentDept, rows: gridRows, cols: gridCols, partitions: partitions });
-            for (const t of localTeachers) await _supabase.from('t_teacher').update({ row_index: t.row_index, col_index: t.col_index }).eq('id', t.id);
-            showToast("성공적으로 저장되었습니다.");
-        }
+            function startListening() {
+                stopListening(); // 기존 중복 채널 제거
+                realTimeChannel = _supabase.channel('public:t_calls')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
+                        if (payload.new.dept === currentDept) triggerCallEffect(payload.new.name);
+                    }).subscribe();
+            }
+            function stopListening() { if(realTimeChannel) _supabase.removeChannel(realTimeChannel); }
+            
+            window.showDashboard = function() { 
+                currentDept = null; 
+                document.getElementById('dashboard-view').style.display = 'block'; 
+                document.getElementById('grid-view').style.display = 'none'; 
+                document.getElementById('teacher-view').style.display = 'none'; 
+                document.getElementById('call-instruction').style.display = 'none';
+                stopListening(); 
+            };
 
-        function startListening() {
-            realTimeChannel = _supabase.channel('public:t_calls')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
-                    if (payload.new.dept === currentDept) triggerCallEffect(payload.new.name);
-                }).subscribe();
-        }
-        function stopListening() { if(realTimeChannel) _supabase.removeChannel(realTimeChannel); }
-        
-        function showDashboard() { 
-            currentDept = null; 
-            document.getElementById('dashboard-view').style.display = 'block'; 
-            document.getElementById('grid-view').style.display = 'none'; 
-            document.getElementById('teacher-view').style.display = 'none'; 
-            document.getElementById('call-instruction').style.display = 'none';
-            stopListening(); 
-        }
+            window.switchMode = function(mode) { 
+                currentMode = mode; 
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); 
+                const btn = document.getElementById(`btn-${mode}`);
+                if(btn) btn.classList.add('active'); 
+                document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none'; 
+                showDashboard(); 
+            };
 
-        function switchMode(mode) { 
-            currentMode = mode; 
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); 
-            const btn = document.getElementById(`btn-${mode}`);
-            if(btn) btn.classList.add('active'); 
-            document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none'; 
-            showDashboard(); 
-        }
+            function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
 
-        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
-
-        function autoScale() { 
-            const outer = document.getElementById('grid-outer-container'); 
-            const wrapper = document.getElementById('grid-wrapper'); 
-            if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
-            const scale = Math.min((outer.clientWidth * 0.92) / wrapper.offsetWidth, (outer.clientHeight * 0.92) / wrapper.offsetHeight); 
-            wrapper.style.transform = `scale(${scale})`; 
-        }
+            function autoScale() { 
+                const outer = document.getElementById('grid-outer-container'); 
+                const wrapper = document.getElementById('grid-wrapper'); 
+                if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
+                const scale = Math.min((outer.clientWidth * 0.92) / wrapper.offsetWidth, (outer.clientHeight * 0.92) / wrapper.offsetHeight); 
+                wrapper.style.transform = `scale(${scale})`; 
+            }
+        })();
     </script>
 </body>
 </html>
