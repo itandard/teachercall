@@ -41,10 +41,11 @@
         .login-box input {
             width: 100%; padding: 1.2rem; margin-bottom: 1rem;
             background: #1e293b; border: 1px solid #334155; border-radius: 1rem; color: white;
+            font-size: 1rem;
         }
         .login-box button {
             width: 100%; padding: 1.2rem; background: var(--primary); color: white;
-            border: none; border-radius: 1rem; font-weight: 700; cursor: pointer;
+            border: none; border-radius: 1rem; font-weight: 700; cursor: pointer; font-size: 1.1rem;
         }
 
         /* Sidebar UI */
@@ -52,9 +53,13 @@
             width: 280px; background: var(--sidebar-bg); padding: 2rem 1.2rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
         }
+        .sidebar-header { margin-bottom: 3rem; }
+        .sidebar-header h1 { font-size: 1.6rem; font-weight: 900; color: #fff; margin: 0; }
+        .sidebar-header p { font-size: 0.95rem; color: var(--text-dim); margin: 5px 0 0 0; font-weight: 500; }
+
         .menu-item {
             padding: 1.2rem 1rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.5rem;
-            transition: 0.2s; display: none; color: var(--text-dim);
+            transition: 0.2s; display: none; color: var(--text-dim); font-weight: 600;
         }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
@@ -144,8 +149,8 @@
         <div class="login-box">
             <h1 style="color:white; font-size:2rem; font-weight:900;">교사 호출 시스템</h1>
             <p style="color:var(--text-dim); margin-bottom:2rem;">장유고등학교</p>
-            <input type="text" id="login-id" placeholder="ID">
-            <input type="password" id="login-pw" placeholder="Password">
+            <input type="text" id="login-id" placeholder="아이디">
+            <input type="password" id="login-pw" placeholder="비밀번호">
             <button onclick="attemptLogin()">접속하기</button>
             <p id="login-error" style="color: #ef4444; margin-top: 1rem; display: none;"></p>
         </div>
@@ -153,13 +158,14 @@
 
     <!-- Sidebar -->
     <nav id="sidebar" style="display: none;">
-        <div style="margin-bottom: 3rem;">
-            <h2 style="font-size: 1.5rem; font-weight: 900; color: #fff; margin: 0;">장유고등학교</h2>
+        <div class="sidebar-header">
+            <h1>교사 호출 시스템</h1>
+            <p>장유고등학교</p>
         </div>
         <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 호출 모드</div>
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 수신 모드</div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 설정</div>
-        <button onclick="location.reload()" style="margin-top: auto; background: none; border: 1px solid #ef4444; color: #f87171; padding: 1rem; border-radius: 1rem; cursor: pointer;">로그아웃</button>
+        <button onclick="location.reload()" style="margin-top: auto; background: none; border: 1px solid #ef4444; color: #f87171; padding: 1rem; border-radius: 1rem; cursor: pointer; font-weight: 700;">로그아웃</button>
     </nav>
 
     <main id="main-content" style="display: none;">
@@ -171,7 +177,6 @@
 
         <!-- Grid View -->
         <div id="grid-view" style="display: none;">
-            <!-- 복원된 배치도 설정 컨트롤러 -->
             <div id="edit-header" style="display: none; background: #1e293b; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1rem; align-items: center; gap: 20px; border: 1px solid var(--primary);">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <label>행(Rows):</label>
@@ -185,7 +190,7 @@
             </div>
             
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1rem;">
-                <button onclick="showDashboard()" style="background:none; border:none; color:var(--primary); font-weight:800; cursor:pointer;">◀ 부서 목록</button>
+                <button onclick="showDashboard()" style="background:none; border:none; color:var(--primary); font-weight:800; cursor:pointer; font-size:1.1rem;">◀ 부서 목록</button>
                 <h2 id="view-title" style="margin:0;">부서명</h2>
             </div>
 
@@ -221,9 +226,9 @@
                 <option value="">-- 교사를 선택하세요 --</option>
             </select>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="applyTeacher()" style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">적용</button>
-                <button onclick="removeTeacher()" id="btn-remove-teacher" style="flex:1; padding:10px; background:#ef4444; color:white; border:none; border-radius:8px; cursor:pointer;">삭제</button>
-                <button onclick="closeModal()" style="flex:1; padding:10px; background:#334155; color:white; border:none; border-radius:8px; cursor:pointer;">취소</button>
+                <button onclick="applyTeacher()" style="flex:1; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">적용</button>
+                <button onclick="removeTeacher()" id="btn-remove-teacher" style="flex:1; padding:10px; background:#ef4444; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">삭제</button>
+                <button onclick="closeModal()" style="flex:1; padding:10px; background:#334155; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">취소</button>
             </div>
         </div>
     </div>
@@ -235,7 +240,7 @@
 
         let currentUser = null, currentMode = 'student', currentDept = null;
         let rows = 4, cols = 6, partitions = { v: [], h: [] }, localLayout = [];
-        let allTeachers = []; // Database teacher list
+        let allTeachers = []; 
         let activeEditCell = { r: 0, c: 0 };
 
         async function attemptLogin() {
@@ -253,10 +258,11 @@
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
 
-            // Load all teacher list for dropdown
+            // Load all teacher list from database for dropdown
             const { data } = await _supabase.from('t_teacher_list').select('*');
             allTeachers = data || [];
             const select = document.getElementById('select-teacher-list');
+            select.innerHTML = '<option value="">-- 교사를 선택하세요 --</option>';
             allTeachers.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.name;
@@ -370,17 +376,14 @@
             const layer = document.getElementById('partition-layer');
             const wrapper = document.getElementById('grid-wrapper');
             layer.innerHTML = '';
-            
-            const thickness = 8; // 파티션 두께
-            const offset = 100;  // Wrapper padding
+            const thickness = 8;
+            const offset = 100;
 
-            // Render Horizontal Triggers & Lines
+            // Horizontal
             for (let r = 0; r <= rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const id = `r${r}c${c}`;
                     const isActive = (partitions.h || []).includes(id);
-                    
-                    // Trigger for Edit
                     const trigger = document.createElement('div');
                     trigger.className = 'partition-trigger';
                     trigger.style.left = `${offset + c * (cardW + gap)}px`;
@@ -388,25 +391,22 @@
                     trigger.style.width = `${cardW}px`; trigger.style.height = `20px`;
                     trigger.onclick = () => togglePartition('h', id);
                     wrapper.appendChild(trigger);
-
                     if (isActive) {
                         const line = document.createElement('div');
                         line.className = 'partition';
-                        // 선 끝단 처리를 위해 width를 gap만큼 늘려 교차지점에서 어색하지 않게 함
                         line.style.left = `${offset + c * (cardW + gap) - thickness/2}px`;
                         line.style.top = `${offset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.width = `${cardW + thickness}px`; line.style.height = `${thickness}px`;
+                        line.style.width = `${cardW + gap + thickness}px`; line.style.height = `${thickness}px`;
                         layer.appendChild(line);
                     }
                 }
             }
 
-            // Render Vertical Triggers & Lines
+            // Vertical
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c <= cols; c++) {
                     const id = `r${r}c${c}`;
                     const isActive = (partitions.v || []).includes(id);
-
                     const trigger = document.createElement('div');
                     trigger.className = 'partition-trigger';
                     trigger.style.left = `${offset + c * (cardW + gap) - (gap/2) - 10}px`;
@@ -414,13 +414,12 @@
                     trigger.style.width = `20px`; trigger.style.height = `${cardH}px`;
                     trigger.onclick = () => togglePartition('v', id);
                     wrapper.appendChild(trigger);
-
                     if (isActive) {
                         const line = document.createElement('div');
                         line.className = 'partition';
                         line.style.left = `${offset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
                         line.style.top = `${offset + r * (cardH + gap) - thickness/2}px`;
-                        line.style.width = `${thickness}px`; line.style.height = `${cardH + thickness}px`;
+                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap + thickness}px`;
                         layer.appendChild(line);
                     }
                 }
@@ -431,7 +430,7 @@
             if (currentMode !== 'edit') return;
             const list = partitions[type] || [];
             if (list.includes(id)) partitions[type] = list.filter(x => x !== id);
-            else list.push(id);
+            else { if(!partitions[type]) partitions[type] = []; partitions[type].push(id); }
             renderGrid();
         }
 
@@ -450,9 +449,9 @@
             const select = document.getElementById('select-teacher-list');
             const name = select.value;
             if (!name) return closeModal();
-            const subject = select.options[select.selectedIndex].dataset.subject;
+            const selectedOption = select.options[select.selectedIndex];
+            const subject = selectedOption.dataset.subject || "";
 
-            // Remove existing if any
             localLayout = localLayout.filter(x => !(x.row_index === activeEditCell.r && x.col_index === activeEditCell.c));
             localLayout.push({
                 id: 'T' + Date.now(),
@@ -474,7 +473,6 @@
 
         async function saveAllSettings() {
             showToast("저장 중...");
-            // Save Partition & Grid Size
             await _supabase.from('t_partition').upsert({
                 dept: currentDept,
                 rows: rows,
@@ -482,10 +480,8 @@
                 partitions: partitions
             }, { onConflict: 'dept' });
 
-            // Save Teachers
             await _supabase.from('t_teacher').delete().eq('dept', currentDept);
             if(localLayout.length > 0) await _supabase.from('t_teacher').insert(localLayout);
-            
             showToast("저장 완료");
         }
 
