@@ -158,13 +158,19 @@
             background: var(--sidebar-bg); padding: 3rem; border-radius: 2rem; width: 500px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+        
+        /* 제작자 정보 스타일 */
+        .credit-text {
+            color: #475569; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem;
+            letter-spacing: -0.02em;
+        }
     </style>
 </head>
 <body oncontextmenu="return false">
 
     <div id="toast">알림</div>
 
-    <!-- v2 로그인 오버레이 (엔터키 지원 추가) -->
+    <!-- 로그인 오버레이 -->
     <div id="login-overlay">
         <div class="login-box">
             <h1 style="color:white; font-size:2.5rem; font-weight:900; margin-bottom:0.5rem;">교사 호출 시스템</h1>
@@ -184,7 +190,12 @@
         <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 부서별 호출</div>
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 실시간 수신 모니터</div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 편집</div>
-        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem; width: 100%;">로그아웃</button>
+        
+        <div style="margin-top: auto;">
+            <!-- 제작자 표기 요청 반영 -->
+            <div class="credit-text">v2.0 by 홍정보</div>
+            <button onclick="location.reload()" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem; width: 100%;">로그아웃</button>
+        </div>
     </nav>
 
     <main id="main-content" style="display: none;">
@@ -267,17 +278,22 @@
 
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-            // 1. 초기화 및 이벤트 리스너 등록
             window.onload = function() {
                 document.getElementById('login-submit-btn').onclick = attemptLogin;
-                
-                // 로그인 입력창 엔터키 대응
                 const loginId = document.getElementById('login-id');
                 const loginPw = document.getElementById('login-pw');
                 [loginId, loginPw].forEach(el => el.onkeydown = e => { if(e.key === 'Enter') attemptLogin(); });
-
                 window.addEventListener('resize', autoScale);
             };
+
+            function autoScale() {
+                const outer = document.getElementById('grid-outer-container');
+                const wrapper = document.getElementById('grid-wrapper');
+                if(!outer || !wrapper) return;
+                const pad = 40;
+                const scale = Math.min((outer.clientWidth - pad) / wrapper.offsetWidth, (outer.clientHeight - pad) / wrapper.offsetHeight);
+                wrapper.style.transform = `scale(${scale})`;
+            }
 
             function playChime() {
                 const playNote = (freq, start, duration) => {
@@ -293,18 +309,16 @@
                     osc.stop(start + duration);
                 };
                 const now = audioCtx.currentTime;
-                playNote(783.99, now, 0.8); // G5
-                playNote(659.25, now + 0.4, 1.2); // E5
+                playNote(783.99, now, 0.8);
+                playNote(659.25, now + 0.4, 1.2);
             }
 
             function getKSTTime() {
                 const now = new Date();
                 const offset = now.getTimezoneOffset() * 60000;
                 const kstDate = new Date(now.getTime() - offset + (9 * 3600000));
-                
                 const pad = (n) => n.toString().padStart(2, '0');
                 const ms = now.getMilliseconds().toString().padStart(3, '0').substring(0, 2);
-
                 return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
             }
 
@@ -330,14 +344,24 @@
                 document.getElementById('main-content').style.display = 'flex';
                 await fetchDeptList();
 
+                // 권한에 따른 메뉴 노출 및 초기 모드 설정 강화
                 if (currentUser.grade == 1) { 
-                    ['btn-student', 'btn-teacher', 'btn-edit'].forEach(id => document.getElementById(id).style.display = 'flex');
+                    // 관리자: 모든 메뉴 허용
+                    document.getElementById('btn-student').style.display = 'flex';
+                    document.getElementById('btn-teacher').style.display = 'flex';
+                    document.getElementById('btn-edit').style.display = 'flex';
                     switchMode('student');
                 } else if (currentUser.grade == 2) { 
+                    // 선생님: 모니터 전용
+                    document.getElementById('btn-student').style.display = 'none';
                     document.getElementById('btn-teacher').style.display = 'flex';
+                    document.getElementById('btn-edit').style.display = 'none';
                     switchMode('teacher');
                 } else { 
+                    // 학생: 호출 전용
                     document.getElementById('btn-student').style.display = 'flex';
+                    document.getElementById('btn-teacher').style.display = 'none';
+                    document.getElementById('btn-edit').style.display = 'none';
                     switchMode('student');
                 }
             }
@@ -354,7 +378,6 @@
                 `).join('');
             }
 
-            // 전역 노출이 필요한 함수들 (onclick 핸들러용)
             window.selectDept = async function(deptName) {
                 currentDept = deptName;
                 document.getElementById('view-title').innerText = deptName;
@@ -439,9 +462,7 @@
                 document.getElementById('popup-status').innerText = "선생님, 호출입니다!";
                 document.getElementById('popup-status').style.color = "var(--text-dim)";
                 popup.style.display = 'flex';
-                
                 playChime();
-                
                 if ('speechSynthesis' in window) {
                     setTimeout(() => {
                         const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
@@ -449,7 +470,6 @@
                         window.speechSynthesis.speak(msg);
                     }, 600);
                 }
-
                 setTimeout(() => { popup.style.display = 'none'; }, 6000);
             }
 
@@ -458,8 +478,7 @@
                 const wrapper = document.getElementById('grid-wrapper');
                 layer.innerHTML = '';
                 document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
-                const thickness = 6;
-                const extraLength = 4;
+                const thickness = 6, extraLength = 4;
 
                 for (let r = 0; r <= gridRows; r++) {
                     for (let c = 0; c < gridCols; c++) {
@@ -551,7 +570,7 @@
             };
 
             function startListening() {
-                stopListening(); // 기존 중복 채널 제거
+                stopListening();
                 realTimeChannel = _supabase.channel('public:t_calls')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
                         if (payload.new.dept === currentDept) triggerCallEffect(payload.new.name);
@@ -569,6 +588,13 @@
             };
 
             window.switchMode = function(mode) { 
+                // 관리자(grade 1)가 아니면 'teacher'나 'edit' 모드로 전환 불가하도록 보조 차단 로직
+                if (currentUser.grade != 1) {
+                    if (mode === 'edit') return;
+                    if (mode === 'teacher' && currentUser.grade != 2) return;
+                    if (mode === 'student' && currentUser.grade == 2) return;
+                }
+
                 currentMode = mode; 
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); 
                 const btn = document.getElementById(`btn-${mode}`);
@@ -577,14 +603,11 @@
                 showDashboard(); 
             };
 
-            function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
-
-            function autoScale() { 
-                const outer = document.getElementById('grid-outer-container'); 
-                const wrapper = document.getElementById('grid-wrapper'); 
-                if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
-                const scale = Math.min((outer.clientWidth * 0.92) / wrapper.offsetWidth, (outer.clientHeight * 0.92) / wrapper.offsetHeight); 
-                wrapper.style.transform = `scale(${scale})`; 
+            function showToast(msg) { 
+                const t = document.getElementById('toast'); 
+                t.innerText = msg; 
+                t.style.display = 'block';
+                setTimeout(() => t.style.display = 'none', 3000);
             }
         })();
     </script>
