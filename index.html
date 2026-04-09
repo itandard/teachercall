@@ -100,7 +100,7 @@
         #grid-wrapper { position: relative; display: inline-block; transition: transform 0.1s ease-out; transform-origin: center center; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
-        /* 개별 좌석 카드 - 폰트 크기 수정 */
+        /* 좌석 카드 */
         .seat-card {
             background: #1e293b; border-radius: 1.2rem; text-align: center;
             border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
@@ -112,19 +112,19 @@
         .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
         .seat-card.empty h3, .seat-card.empty p { display: none; }
 
-        /* 파티션 - 길이 최적화 */
+        /* 파티션 */
         .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; border-radius: 3px; }
         .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
         .edit-mode .partition-trigger { display: block; }
 
-        /* 호출 안내 메시지 */
+        /* 안내 문구 */
         #call-instruction {
             text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--accent);
             margin-bottom: 1.5rem; animation: fadeIn 0.5s ease-out;
             background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 1rem;
         }
 
-        /* 호출 팝업 */
+        /* 팝업 */
         #call-popup {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
             z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
@@ -235,7 +235,7 @@
         <div id="call-popup">
             <div class="popup-content">
                 <h1 id="popup-name">교사명</h1>
-                <p id="popup-status">선생님, 호출입니다!</p>
+                <p id="popup-status">호출 대기 중...</p>
             </div>
         </div>
     </main>
@@ -262,6 +262,27 @@
         let gridRows = 4, gridCols = 6, partitions = { v: [], h: [] };
         let localTeachers = [], activeEditCell = { r: 0, c: 0 }, realTimeChannel = null;
         let isCallingLock = false;
+
+        // 효과음 생성기 (전자음)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playChime() {
+            const playNote = (freq, start, duration) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.1, start);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(start);
+                osc.stop(start + duration);
+            };
+            // 띵~동 (솔-미)
+            const now = audioCtx.currentTime;
+            playNote(783.99, now, 0.8); // G5
+            playNote(659.25, now + 0.4, 1.2); // E5
+        }
 
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
@@ -385,9 +406,18 @@
             pStatus.innerText = "선생님, 호출입니다!";
             pStatus.style.color = "var(--text-dim)";
             popup.style.display = 'flex';
-            const msg = new SpeechSynthesisUtterance(`${name} 선생님, 호출입니다.`);
-            msg.lang = 'ko-KR'; 
-            window.speechSynthesis.speak(msg);
+            
+            // 효과음 재생
+            playChime();
+            
+            // 음성 멘트 수정: 심플하게 "[이름] 선생님"
+            setTimeout(() => {
+                const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
+                msg.lang = 'ko-KR'; 
+                msg.rate = 0.9; // 조금 천천히 정중하게
+                window.speechSynthesis.speak(msg);
+            }, 600); // 종소리 이후 약간의 딜레이
+
             setTimeout(() => { popup.style.display = 'none'; }, 6000);
         }
 
@@ -397,7 +427,7 @@
             layer.innerHTML = '';
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
             const thickness = 6;
-            const extraLength = 4; // 너무 길지 않게 살짝만 삐져나오게 조정 (0에서 4 사이 최적값)
+            const extraLength = 4;
 
             for (let r = 0; r <= gridRows; r++) {
                 for (let c = 0; c < gridCols; c++) {
