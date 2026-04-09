@@ -1,180 +1,298 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>교사 호출기</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; height: 100vh; background-color: #f4f6f8; }
-    /* 좌측 사이드바 */
-    #sidebar { width: 250px; background-color: #2c3e50; color: white; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-    #sidebar select, #sidebar button { padding: 10px; font-size: 16px; border-radius: 5px; border: none; cursor: pointer; }
-    
-    /* 우측 메인 화면 */
-    #main { flex: 1; padding: 20px; display: flex; flex-direction: column; }
-    #desk-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-    
-    /* 선생님 자리 버튼 */
-    .teacher-btn { background-color: white; border: 2px solid #3498db; border-radius: 10px; padding: 20px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .teacher-btn:hover { background-color: #3498db; color: white; }
-    .teacher-btn:active { transform: scale(0.95); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교무실 좌석 배치 편집기</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #2c3e50;
+            --border-color: #ddd;
+            --empty-color: #e0e0e0;
+        }
 
-    /* 교사용 대기 화면 */
-    #teacher-view { display: none; flex: 1; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; color: #2c3e50; }
-  </style>
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; height: 100vh; }
+        
+        /* 상단 헤더 */
+        header { background-color: white; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        h1 { margin: 0; font-size: 20px; }
+        .dept-select-group { display: flex; align-items: center; gap: 10px; }
+        select, button { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 14px; cursor: pointer; }
+        button#save-btn { background-color: var(--primary-color); color: white; border: none; font-weight: bold; }
+        button#save-btn:hover { background-color: #2980b9; }
+
+        /* 메인 콘텐츠 Area */
+        #main-container { flex: 1; padding: 20px; display: flex; justify-content: center; align-items: center; overflow: auto; }
+
+        /* 좌석 격자 (CSS Grid) */
+        #grid-container { 
+            display: grid; 
+            gap: 10px; 
+            background-color: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            /* 격자 크기 정의 - 자바스크립트에서 동적 할당 */
+        }
+
+        /* 개별 좌석 셀 */
+        .seat-cell { 
+            aspect-ratio: 1 / 1; /* 정사각형 유지 */
+            background-color: white; 
+            border: 2px dashed var(--border-color); 
+            border-radius: 8px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            position: relative;
+            min-width: 80px;
+        }
+        .seat-cell:hover { border-color: var(--primary-color); background-color: #fbfdff; transform: scale(1.03); }
+
+        /* 배정된 선생님 스타일 */
+        .seat-cell.assigned { border-style: solid; border-color: var(--primary-color); background-color: white; box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2); }
+        .seat-cell.assigned h3 { margin: 0; font-size: 16px; color: var(--primary-color); }
+        .seat-cell.assigned p { margin: 3px 0 0 0; font-size: 12px; opacity: 0.8; }
+
+        /* 빈 자리 스타일 */
+        .seat-cell.empty { color: #aaa; }
+        .seat-cell.empty span.plus { font-size: 24px; font-weight: light; }
+
+        /* 좌표 표시 (디버깅용, 실제 서비스에선 숨겨도 됨) */
+        .coord { position: absolute; top: 2px; left: 4px; font-size: 9px; color: #ccc; }
+
+        /* 모달 팝업 스타일 */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 12px; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        .modal-header { font-weight: bold; font-size: 18px; margin-bottom: 15px; }
+        .modal-body { margin-bottom: 20px; }
+        #teacher-select { width: 100%; padding: 10px; margin-bottom: 10px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: center; }
+        .btn-close { background-color: #95a5a6; color: white; border: none; }
+        .btn-remove { background-color: #e74c3c; color: white; border: none; }
+
+    </style>
 </head>
 <body>
 
-  <div id="sidebar">
-    <h2>메뉴</h2>
-    <label>모드 선택</label>
-    <select id="mode-select" onchange="toggleMode()">
-      <option value="student">학생용 (호출하기)</option>
-      <option value="teacher">교사용 (호출받기)</option>
-    </select>
+    <header>
+        <h1>좌석 배치 편집기</h1>
+        <div class="dept-select-group">
+            <label>격자 크기:</label>
+            <input type="number" id="grid-rows" value="4" min="1" max="10" style="width:40px; padding:6px;"> x 
+            <input type="number" id="grid-cols" value="6" min="1" max="10" style="width:40px; padding:6px;">
+            <select id="dept-select">
+                <option value="교무부">교무부</option>
+                <option value="1학년부">1학년부</option>
+                <option value="2학년부">2학년부</option>
+            </select>
+            <button id="save-btn" onclick="saveLayout()">배치 저장</button>
+        </div>
+    </header>
 
-    <div id="dept-container">
-      <label>부서 선택</label>
-      <select id="dept-select" onchange="loadTeachers()">
-        <option value="전체">전체</option>
-        <option value="교무부">교무부</option>
-        <option value="1학년부">1학년부</option>
-        <option value="2학년부">2학년부</option>
-      </select>
+    <div id="main-container">
+        <div id="grid-container"></div>
     </div>
-  </div>
 
-  <div id="main">
-    <div id="student-view">
-      <h2>선생님 자리 배치도</h2>
-      <div id="desk-layout">
+    <div id="teacherModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">좌석 배정 (<span id="coord-display"></span>)</div>
+            <div class="modal-body">
+                <p id="current-occupant" style="font-size:14px; color:#e74c3c; margin-bottom:10px; display:none;"></p>
+                <select id="teacher-select">
+                    <option value="">-- 선생님 선택 --</option>
+                    </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" onclick="closeModal()">취소</button>
+                <button id="btn-remove" class="btn-remove" style="display:none;" onclick="removeTeacherFromSeat()">자리 비우기</button>
+                <button id="btn-assign" style="background-color:var(--primary-color); color:white; border:none;" onclick="assignTeacherToSeat()">배정하기</button>
+            </div>
         </div>
     </div>
 
-    <div id="teacher-view">
-      🔊 수신 대기 중입니다...
-    </div>
-  </div>
+    <script>
+        // 1. Supabase 설정 (반드시 선생님 정보로 변경하세요)
+        const SUPABASE_URL = 'https://YOUR_PROJECT_URL.supabase.co';
+        const SUPABASE_KEY = 'YOUR_ANON_KEY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  <script>
-    // 1. Supabase 초기화 (선생님의 프로젝트 정보로 변경 필요)
-    const SUPABASE_URL = 'https://[선생님의_프로젝트_URL].supabase.co';
-    const SUPABASE_KEY = '[선생님의_anon_key]';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentTeachers = []; // 모든 선생님 정보 저장
+        let selectedCell = { row: null, col: null }; // 현재 클릭한 셀 좌표
+        const gridContainer = document.getElementById('grid-container');
+        const deptSelect = document.getElementById('dept-select');
+        const rowsInput = document.getElementById('grid-rows');
+        const colsInput = document.getElementById('grid-cols');
 
-    let realtimeSubscription = null;
+        // 초기 로드
+        window.onload = async () => {
+            await loadAllTeachers(); // DB에서 전체 선생님 가져오기
+            renderGrid();            // 격자 그리기
+        };
 
-    // 2. 선생님 목록 불러오기 (학생용 화면)
-    async function loadTeachers() {
-      const dept = document.getElementById('dept-select').value;
-      let query = supabase.from('t_teacher').select('*');
-      
-      if (dept !== '전체') {
-        query = query.eq('dept', dept);
-      }
+        // 이벤트 리스너: 격자 크기나 부서 변경 시 리렌더링
+        [rowsInput, colsInput, deptSelect].forEach(el => el.addEventListener('change', renderGrid));
 
-      const { data, error } = await query;
-      if (error) {
-        console.error('불러오기 오류:', error);
-        return;
-      }
+        // 2. DB에서 전체 선생님 가져오기
+        async function loadAllTeachers() {
+            const { data, error } = await _supabase
+                .from('t_teacher')
+                .select('*')
+                .order('name');
+            if (error) { console.error('교사 로드 실패:', error); alert('데이터를 불러오지 못했습니다.'); return; }
+            currentTeachers = data;
+        }
 
-      const layout = document.getElementById('desk-layout');
-      layout.innerHTML = ''; // 초기화
+        // 3. 현재 부서의 좌석 격자 그리기
+        function renderGrid() {
+            const rows = parseInt(rowsInput.value);
+            const cols = parseInt(colsInput.value);
+            const targetDept = deptSelect.value;
 
-      data.forEach(teacher => {
-        const btn = document.createElement('button');
-        btn.className = 'teacher-btn';
-        btn.innerHTML = `${teacher.name} 선생님<br><span style="font-size:14px; font-weight:normal;">(${teacher.subject})</span>`;
-        btn.onclick = () => callTeacher(teacher.id, teacher.name);
-        layout.appendChild(btn);
-      });
-    }
+            gridContainer.innerHTML = ''; // 초기화
+            // CSS Grid 설정 동적 변경
+            gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-    // 3. 선생님 호출하기 (DB INSERT)
-    async function callTeacher(id, name) {
-      if(!confirm(`${name} 선생님을 호출하시겠습니까?`)) return;
+            // 현재 부서에 배정된 선생님만 필터링
+            const deptTeachers = currentTeachers.filter(t => t.dept === targetDept && t.row_index !== null);
 
-      const { error } = await supabase
-        .from('t_calls')
-        .insert([{ id: id }]);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'seat-cell';
+                    cell.innerHTML = `<span class="coord">${r},${c}</span>`;
+                    
+                    // 해당 좌표에 선생님이 있는지 확인
+                    const teacher = deptTeachers.find(t => t.row_index === r && t.col_index === c);
 
-      if (error) {
-        alert('호출에 실패했습니다.');
-        console.error(error);
-      } else {
-        alert(`${name} 선생님을 호출했습니다!`);
-      }
-    }
+                    if (teacher) {
+                        cell.classList.add('assigned');
+                        cell.innerHTML += `<h3>${teacher.name}</h3><p>${teacher.subject || ''}</p>`;
+                    } else {
+                        cell.classList.add('empty');
+                        cell.innerHTML += `<span class="plus">+</span>`;
+                    }
 
-    // 4. 모드 전환 로직
-    function toggleMode() {
-      const mode = document.getElementById('mode-select').value;
-      const studentView = document.getElementById('student-view');
-      const deptContainer = document.getElementById('dept-container');
-      const teacherView = document.getElementById('teacher-view');
+                    // 클릭 이벤트: 모달 열기
+                    cell.onclick = () => openModal(r, c, teacher);
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
 
-      if (mode === 'student') {
-        // 학생 모드 UI
-        studentView.style.display = 'block';
-        deptContainer.style.display = 'block';
-        teacherView.style.display = 'none';
-        
-        // 교사 모드 구독 해제
-        if(realtimeSubscription) supabase.removeChannel(realtimeSubscription);
-        loadTeachers();
+        // 4. 모달 관리
+        const modal = document.getElementById('teacherModal');
+        const teacherSelect = document.getElementById('teacher-select');
+        const removeBtn = document.getElementById('btn-remove');
+        const assignBtn = document.getElementById('btn-assign');
+        const occupantText = document.getElementById('current-occupant');
 
-      } else {
-        // 교사 모드 UI
-        studentView.style.display = 'none';
-        deptContainer.style.display = 'none';
-        teacherView.style.display = 'flex';
-        
-        // 브라우저 정책상 오디오 재생 권한 획득을 위해 빈 소리 한 번 재생
-        const dummyUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(dummyUtterance);
+        function openModal(row, col, teacher) {
+            selectedCell = { row, col };
+            document.getElementById('coord-display').innerText = `${row}, ${col}`;
+            modal.style.display = 'flex';
 
-        // Supabase 실시간 구독 시작
-        startListening();
-      }
-    }
+            // 드롭다운 초기화
+            teacherSelect.innerHTML = '<option value="">-- 선생님 선택 --</option>';
+            
+            // 아직 자리가 배정되지 않았거나, 현재 이 자리에 앉은 선생님만 목록에 표시
+            const availableTeachers = currentTeachers.filter(t => t.row_index === null || (teacher && t.id === teacher.id));
+            
+            availableTeachers.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.id;
+                option.innerText = `${t.name} (${t.dept} / ${t.subject || ''})`;
+                teacherSelect.appendChild(option);
+            });
 
-    // 5. 실시간 감지 및 TTS 출력 (교사용 화면)
-    function startListening() {
-      realtimeSubscription = supabase
-        .channel('public:t_calls')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
-          console.log('새로운 호출 감지:', payload.new);
-          playTTS(payload.new.id);
-        })
-        .subscribe();
-    }
+            if (teacher) {
+                occupantText.innerText = `현재 자리: ${teacher.name}`;
+                occupantText.style.display = 'block';
+                teacherSelect.value = teacher.id; // 드롭다운 자동 선택
+                removeBtn.style.display = 'inline-block'; // 자리 비우기 버튼 활성화
+                assignBtn.innerText = '변경하기';
+            } else {
+                occupantText.style.display = 'none';
+                teacherSelect.value = '';
+                removeBtn.style.display = 'none';
+                assignBtn.innerText = '배정하기';
+            }
+        }
 
-    // 6. 교사 ID로 이름을 찾아 TTS 실행
-    async function playTTS(teacherId) {
-      const { data, error } = await supabase
-        .from('t_teacher')
-        .select('name')
-        .eq('id', teacherId)
-        .single();
+        function closeModal() { modal.style.display = 'none'; }
 
-      if (data && data.name) {
-        const text = `${data.name} 선생님 호출`;
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ko-KR'; // 한국어 설정
-        utterance.rate = 0.9;     // 말하기 속도 (1이 기본)
-        window.speechSynthesis.speak(utterance);
-        
-        // 화면에 임시로 텍스트 띄워주기
-        const view = document.getElementById('teacher-view');
-        view.innerHTML = `🔊 ${text}!`;
-        setTimeout(() => view.innerHTML = '🔊 수신 대기 중입니다...', 5000);
-      }
-    }
+        // 5. 로직: 자리에 선생님 배정 (메모리상 변경)
+        function assignTeacherToSeat() {
+            const teacherId = teacherSelect.value;
+            if (!teacherId) { alert('선생님을 선택해주세요.'); return; }
 
-    // 초기 실행
-    loadTeachers();
-  </script>
+            // 만약 선택한 선생님이 다른 부서나 다른 자리에 있었다면, 이전 자리를 비워줘야 함 (로직 복잡도 방지 위해 저장 시 일괄 처리 추천)
+            const targetTeacherIndex = currentTeachers.findIndex(t => t.id === teacherId);
+            
+            if (targetTeacherIndex !== -1) {
+                // 메모리 내 데이터 업데이트
+                currentTeachers[targetTeacherIndex].dept = deptSelect.value; // 현재 선택된 부서로 변경
+                currentTeachers[targetTeacherIndex].row_index = selectedCell.row;
+                currentTeachers[targetTeacherIndex].col_index = selectedCell.col;
+            }
+
+            renderGrid();
+            closeModal();
+        }
+
+        // 6. 로직: 자리 비우기 (메모리상 변경)
+        function removeTeacherFromSeat() {
+            const teacherId = teacherSelect.value;
+            const targetTeacherIndex = currentTeachers.findIndex(t => t.id === teacherId);
+            
+            if (targetTeacherIndex !== -1) {
+                // 좌표 초기화
+                currentTeachers[targetTeacherIndex].row_index = null;
+                currentTeachers[targetTeacherIndex].col_index = null;
+            }
+
+            renderGrid();
+            closeModal();
+        }
+
+        // 7. 핵심 로직: 최종 변경사항 DB에 일괄 저장
+        async function saveLayout() {
+            if(!confirm('현재 배치를 데이터베이스에 저장하시겠습니까?')) return;
+
+            // 실제 서비스에서는 성능을 위해 변경된 데이터만 추려 업데이트(`upsert`) 하는 것이 좋으나,
+            // 학생 수준의 교육용이므로 루프를 돌며 각각 update 하는 기본 방식으로 제시합니다.
+            
+            let successCount = 0;
+            const btn = document.getElementById('save-btn');
+            btn.innerText = '저장 중...';
+            btn.disabled = true;
+
+            for (const teacher of currentTeachers) {
+                const { error } = await _supabase
+                    .from('t_teacher')
+                    .update({ 
+                        dept: teacher.dept, // 부서 이동도 고려
+                        row_index: teacher.row_index, 
+                        col_index: teacher.col_index 
+                    })
+                    .eq('id', teacher.id);
+                
+                if(!error) successCount++;
+                else console.error(`저장 실패 (${teacher.name}):`, error);
+            }
+
+            alert(`${successCount}명의 배정 정보가 저장되었습니다.`);
+            btn.innerText = '배치 저장';
+            btn.disabled = false;
+            await loadAllTeachers(); // 최신 데이터 다시 로드
+            renderGrid();
+        }
+    </script>
 </body>
 </html>
