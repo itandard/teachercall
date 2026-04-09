@@ -271,17 +271,35 @@
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, start);
-                gain.gain.setValueAtTime(0.1, start);
+                gain.gain.setValueAtTime(0.3, start); // 띵동 소리 크기 조절 (0.1 -> 0.3)
                 gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(start);
                 osc.stop(start + duration);
             };
-            // 띵~동 (솔-미)
             const now = audioCtx.currentTime;
-            playNote(783.99, now, 0.8); // G5
-            playNote(659.25, now + 0.4, 1.2); // E5
+            playNote(783.99, now, 0.8); // G5 (띵)
+            playNote(659.25, now + 0.4, 1.2); // E5 (동)
+        }
+
+        // 한국 시간 포맷터 (YYYY-MM-DD HH:mm:ss.SS)
+        function getKSTTime() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const kstDate = new Date(now.getTime() - offset + (9 * 3600000)); // 현재 UTC + 9시간
+            
+            const pad = (n) => n.toString().padStart(2, '0');
+            const ms = now.getMilliseconds().toString().padStart(3, '0').substring(0, 2); // 소수점 둘째자리까지
+
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+            const seconds = pad(now.getSeconds());
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
         }
 
         async function attemptLogin() {
@@ -393,7 +411,14 @@
             pStatus.innerText = "선생님을 호출 중입니다...";
             pStatus.style.color = "var(--primary)";
             popup.style.display = 'flex';
-            await _supabase.from('t_calls').insert([{ name, dept: currentDept }]);
+            
+            // 데이터베이스에 한국 시간 로그 남기기
+            await _supabase.from('t_calls').insert([{ 
+                name, 
+                dept: currentDept, 
+                call_time: getKSTTime() 
+            }]);
+
             setTimeout(() => { popup.style.display = 'none'; isCallingLock = false; renderGrid(); }, 3000);
         }
 
@@ -407,16 +432,14 @@
             pStatus.style.color = "var(--text-dim)";
             popup.style.display = 'flex';
             
-            // 효과음 재생
-            playChime();
+            playChime(); // 강화된 볼륨의 효과음
             
-            // 음성 멘트 수정: 심플하게 "[이름] 선생님"
             setTimeout(() => {
                 const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
                 msg.lang = 'ko-KR'; 
-                msg.rate = 0.9; // 조금 천천히 정중하게
+                msg.rate = 0.9;
                 window.speechSynthesis.speak(msg);
-            }, 600); // 종소리 이후 약간의 딜레이
+            }, 600);
 
             setTimeout(() => { popup.style.display = 'none'; }, 6000);
         }
