@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>교사 호출 시스템 - 장유고등학교</title>
+    <title>장유고등학교 교사 호출 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -16,118 +16,129 @@
             --accent: #10b981; 
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
-            --partition-active: #94a3b8;
+            --danger: #ef4444;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
-            font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0; background-color: var(--bg); color: var(--text-main);
             display: flex; height: 100vh; width: 100vw; overflow: hidden;
         }
 
-        /* UI Overlays */
+        /* 공통 애니메이션 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 로그인 오버레이 */
         #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            position: fixed; inset: 0; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
             display: flex; justify-content: center; align-items: center; z-index: 5000;
         }
         .login-box {
-            background: var(--sidebar-bg); padding: 3rem; border-radius: 2.5rem;
-            border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 420px; text-align: center;
+            background: var(--sidebar-bg); padding: 3rem; border-radius: 2rem;
+            border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; text-align: center;
+            animation: fadeIn 0.5s ease-out;
         }
         .login-box input {
-            width: 100%; padding: 1.2rem; margin-bottom: 1rem;
-            background: #1e293b; border: 1px solid #334155; border-radius: 1rem; color: white;
-            font-size: 1rem;
+            width: 100%; padding: 1rem; margin-bottom: 1rem; background: #1e293b;
+            border: 1px solid #334155; border-radius: 0.75rem; color: white; font-size: 1rem;
         }
         .login-box button {
-            width: 100%; padding: 1.2rem; background: var(--primary); color: white;
-            border: none; border-radius: 1rem; font-weight: 700; cursor: pointer; font-size: 1.1rem;
+            width: 100%; padding: 1rem; background: var(--primary); color: white;
+            border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; font-size: 1.1rem;
+            transition: 0.2s;
         }
+        .login-box button:hover { background: #4f46e5; }
 
+        /* 사이드바 */
         nav {
-            width: 280px; background: var(--sidebar-bg); padding: 2rem 1.2rem;
+            width: 260px; background: var(--sidebar-bg); padding: 2rem 1rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
         }
-        .sidebar-header { margin-bottom: 3rem; }
-        .sidebar-header h1 { font-size: 1.6rem; font-weight: 900; color: #fff; margin: 0; }
-        .sidebar-header p { font-size: 0.95rem; color: var(--text-dim); margin: 5px 0 0 0; font-weight: 500; }
+        .sidebar-header { margin-bottom: 2.5rem; padding: 0 0.5rem; }
+        .sidebar-header h1 { font-size: 1.4rem; font-weight: 800; margin: 0; }
+        .sidebar-header p { font-size: 0.85rem; color: var(--text-dim); margin-top: 4px; }
 
         .menu-item {
-            padding: 1.2rem 1rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.5rem;
-            transition: 0.2s; display: none; color: var(--text-dim); font-weight: 600;
+            padding: 1rem; border-radius: 0.75rem; cursor: pointer; margin-bottom: 0.5rem;
+            color: var(--text-dim); font-weight: 600; transition: 0.2s; display: none;
         }
+        .menu-item:hover { background: rgba(255,255,255,0.05); color: #white; }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
-        main { flex: 1; padding: 2rem; display: flex; flex-direction: column; overflow: hidden; }
+        /* 메인 컨텐츠 */
+        main { flex: 1; padding: 2rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
+        /* 부서 대시보드 */
         #dept-dashboard {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 1.5rem; margin-top: 2rem;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem; margin-top: 2rem; overflow-y: auto; padding-bottom: 2rem;
         }
         .dept-card {
-            background: var(--card-bg); padding: 3.5rem 1.5rem; border-radius: 2rem;
+            background: var(--card-bg); padding: 3rem 1.5rem; border-radius: 1.5rem;
             border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); animation: fadeIn 0.4s ease-out;
         }
-        .dept-card:hover { transform: translateY(-8px); border-color: var(--primary); }
+        .dept-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
 
-        #grid-view { height: 100%; display: flex; flex-direction: column; }
+        /* 그리드 뷰 */
         #grid-outer-container {
             flex: 1; display: flex; align-items: center; justify-content: center;
-            background: var(--card-bg); border-radius: 2.5rem; overflow: hidden; position: relative;
-            margin-top: 1.5rem; border: 1px solid rgba(255,255,255,0.05);
+            background: var(--card-bg); border-radius: 2rem; overflow: hidden; position: relative;
+            margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05);
         }
-        #grid-wrapper { position: relative; padding: 200px; transform-origin: center center; }
+        #grid-wrapper { position: relative; padding: 100px; transform-origin: center center; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
+        /* 좌석 카드 */
         .seat-card {
-            background: #0f172a; border-radius: 1rem; padding: 1.2rem; text-align: center;
+            background: #0f172a; border-radius: 0.75rem; padding: 1rem; text-align: center;
             border: 1px solid #334155; display: flex; flex-direction: column; justify-content: center;
-            width: 160px; height: 130px; transition: 0.2s; cursor: pointer;
+            width: 150px; height: 120px; transition: 0.2s; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 10;
         }
-        .seat-card h3 { margin: 0; font-size: 1.4rem; color: #fff; font-weight: 800; }
-        .seat-card p { margin: 0.4rem 0 0; font-size: 0.9rem; color: var(--text-dim); }
+        .seat-card h3 { margin: 0; font-size: 1.25rem; color: #fff; font-weight: 700; }
+        .seat-card p { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--text-dim); }
+        .seat-card:hover { border-color: var(--primary); transform: scale(1.03); z-index: 20; }
         .seat-card.empty { background: transparent; border: 1px solid rgba(255,255,255,0.03); cursor: default; }
         .edit-mode .seat-card.empty { background: rgba(255,255,255,0.02); border: 1px dashed #334155; cursor: pointer; }
 
-        /* Partition Styling */
-        .partition-trigger {
-            position: absolute; background: transparent; cursor: pointer; z-index: 30;
-            display: none; transition: 0.2s;
-        }
+        /* 파티션 */
+        .partition { position: absolute; background: var(--text-dim); z-index: 5; pointer-events: none; opacity: 0.6; }
+        .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
         .edit-mode .partition-trigger { display: block; }
-        .partition-trigger:hover { background: rgba(99, 102, 241, 0.4); }
+        .partition-trigger:hover { background: rgba(99, 102, 241, 0.3); }
 
-        .partition { 
-            position: absolute; background: var(--partition-active); z-index: 5; pointer-events: none; 
-            border-radius: 3px;
-        }
-
+        /* 모달 */
         #edit-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 6000; align-items: center; justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 6000; align-items: center; justify-content: center;
         }
         .modal-content {
-            background: var(--sidebar-bg); padding: 2.5rem; border-radius: 2rem; width: 400px;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--sidebar-bg); padding: 2rem; border-radius: 1.5rem; width: 400px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .modal-content select {
+            width: 100%; padding: 0.85rem; margin-top: 0.5rem; margin-bottom: 1.5rem;
+            background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; color: white;
+            font-size: 1rem;
         }
 
+        /* 토스트 알림 */
         #toast {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: var(--primary); color: white; padding: 12px 30px; border-radius: 40px;
-            font-weight: 800; z-index: 10000; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: white; padding: 0.75rem 2rem; border-radius: 2rem;
+            font-weight: 700; z-index: 10000; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
+        /* 호출 팝업 */
         #call-popup {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #020617; padding: 5rem; border-radius: 5rem;
-            box-shadow: 0 0 0 100vmax rgba(0,0,0,0.9), 0 0 100px var(--primary-glow);
-            z-index: 9999; text-align: center; border: 8px solid var(--primary); width: 90%; max-width: 700px;
+            display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95);
+            z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
+            border: 15px solid var(--primary);
         }
+        #call-popup h1 { font-size: 10rem; margin: 0; text-shadow: 0 0 50px var(--primary); }
     </style>
 </head>
 <body>
@@ -137,49 +148,53 @@
     <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
-            <h1 style="color:white; font-size:2rem; font-weight:900;">교사 호출 시스템</h1>
-            <p style="color:var(--text-dim); margin-bottom:2rem;">장유고등학교</p>
-            <input type="text" id="login-id" placeholder="아이디">
-            <input type="password" id="login-pw" placeholder="비밀번호">
-            <button onclick="attemptLogin()">접속하기</button>
-            <p id="login-error" style="color: #ef4444; margin-top: 1rem; display: none;"></p>
+            <h1 style="color:white; font-size:1.8rem; font-weight:800; margin-bottom:0.5rem;">장유고 호출 시스템</h1>
+            <p style="color:var(--text-dim); margin-bottom:2.5rem;">교직원 전용 시스템</p>
+            <input type="text" id="login-id" placeholder="아이디" autocomplete="username">
+            <input type="password" id="login-pw" placeholder="비밀번호" autocomplete="current-password">
+            <button onclick="attemptLogin()">로그인</button>
+            <p id="login-error" style="color: var(--danger); margin-top: 1rem; display: none; font-weight: 600;"></p>
         </div>
     </div>
 
     <!-- Sidebar -->
     <nav id="sidebar" style="display: none;">
         <div class="sidebar-header">
-            <h1>교사 호출 시스템</h1>
-            <p>장유고등학교</p>
+            <h1>장유고등학교</h1>
+            <p>교사 호출 및 배치 관리</p>
         </div>
-        <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 호출 모드</div>
-        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 수신 모드</div>
-        <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 설정</div>
-        <button onclick="location.reload()" style="margin-top: auto; background: none; border: 1px solid #ef4444; color: #f87171; padding: 1rem; border-radius: 1rem; cursor: pointer; font-weight: 700;">로그아웃</button>
+        <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 부서별 호출</div>
+        <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 실시간 수신 모니터</div>
+        <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 편집</div>
+        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.8rem; border-radius: 0.75rem; cursor: pointer; font-weight: 700;">로그아웃</button>
     </nav>
 
     <main id="main-content" style="display: none;">
+        <!-- 부서 대시보드 뷰 -->
         <div id="dashboard-view">
-            <h1 style="font-size: 2.5rem; font-weight:900;">부서를 선택하세요</h1>
+            <h1 style="font-size: 2rem; font-weight:800;">부서를 선택해 주세요</h1>
             <div id="dept-dashboard"></div>
         </div>
 
+        <!-- 그리드 배치/호출 뷰 -->
         <div id="grid-view" style="display: none;">
-            <div id="edit-header" style="display: none; background: #1e293b; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1rem; align-items: center; gap: 20px; border: 1px solid var(--primary);">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <label>행:</label>
-                    <input type="number" id="input-rows" value="4" style="width:60px; margin:0;" onchange="updateGridSize()">
-                    <label>열:</label>
-                    <input type="number" id="input-cols" value="6" style="width:60px; margin:0;" onchange="updateGridSize()">
+            <!-- 편집 도구 모음 -->
+            <div id="edit-header" style="display: none; background: #1e293b; padding: 1rem; border-radius: 1rem; margin-bottom: 1rem; align-items: center; gap: 1rem; border: 1px solid var(--primary);">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span>행:</span>
+                    <input type="number" id="input-rows" value="4" style="width:50px; padding:5px; background:#0f172a; border:1px solid #334155; color:white; border-radius:4px;">
+                    <span style="margin-left:5px;">열:</span>
+                    <input type="number" id="input-cols" value="6" style="width:50px; padding:5px; background:#0f172a; border:1px solid #334155; color:white; border-radius:4px;">
+                    <button onclick="updateGridSize()" style="background:#334155; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:0.8rem;">크기 적용</button>
                 </div>
                 <div style="flex:1; text-align:right;">
-                    <button onclick="saveAllSettings()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:800; cursor:pointer;">서버에 저장</button>
+                    <button onclick="saveAllSettings()" style="background:var(--primary); color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer;">최종 저장</button>
                 </div>
             </div>
             
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1rem;">
-                <button onclick="showDashboard()" style="background:none; border:none; color:var(--primary); font-weight:800; cursor:pointer; font-size:1.1rem;">◀ 부서 목록</button>
-                <h2 id="view-title" style="margin:0;">부서명</h2>
+                <button onclick="showDashboard()" style="background:none; border:none; color:var(--primary); font-weight:700; cursor:pointer; font-size:1rem;">◀ 부서 목록으로</button>
+                <h2 id="view-title" style="margin:0; font-weight:800;">부서명</h2>
             </div>
 
             <div id="grid-outer-container">
@@ -190,32 +205,34 @@
             </div>
         </div>
 
+        <!-- 수신 모니터 뷰 -->
         <div id="teacher-view" style="display: none; flex: 1; align-items: center; justify-content: center;">
-            <div style="text-align: center; background: var(--sidebar-bg); padding: 4rem; border-radius: 3rem;">
-                <h1 id="monitor-status" style="font-size: 3rem; margin: 0;">부서명</h1>
-                <p style="color: var(--accent); font-weight: 800; margin-top: 1rem;">● 실시간 수신 대기 중</p>
+            <div style="text-align: center; background: var(--sidebar-bg); padding: 5rem; border-radius: 3rem; border: 1px solid var(--primary);">
+                <h1 id="monitor-status" style="font-size: 4rem; margin: 0;">부서명</h1>
+                <p style="color: var(--accent); font-size: 1.5rem; font-weight: 800; margin-top: 1.5rem;">● 실시간 호출 대기 모드</p>
             </div>
         </div>
 
+        <!-- 호출 발생 시 오버레이 -->
         <div id="call-popup">
-            <h1 id="popup-name" style="font-size: 7rem; margin: 0;">홍길동</h1>
-            <p style="font-size: 2rem; color: var(--text-dim);">선생님, 호출입니다!</p>
+            <h1 id="popup-name">홍길동</h1>
+            <p style="font-size: 3rem; color: var(--text-dim); font-weight: 700;">선생님, 호출입니다!</p>
         </div>
     </main>
 
+    <!-- 자리 배치 모달 -->
     <div id="edit-modal">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-top:0; color:white;">교사 배치</h3>
-            <div style="margin-top: 20px;">
-                <label style="color:var(--text-dim); font-size: 0.9rem;">성함 입력</label>
-                <input type="text" id="input-teacher-name" placeholder="선생님 성함">
-                <label style="color:var(--text-dim); font-size: 0.9rem;">담당 과목/직위</label>
-                <input type="text" id="input-teacher-subject" placeholder="과목 (예: 국어)">
+            <h3 style="margin-top:0; color:white; font-size:1.4rem;">교사 자리 배치</h3>
+            <p id="modal-pos" style="color:var(--text-dim); font-size:0.9rem; margin-bottom:1.5rem;"></p>
+            <div style="margin-top: 10px;">
+                <label style="color:var(--text-dim); font-size: 0.85rem; display:block; margin-bottom:5px;">배치할 교사 선택</label>
+                <select id="teacher-dropdown"></select>
             </div>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="applyTeacher()" style="flex:1; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">확인</button>
-                <button onclick="removeTeacher()" id="btn-remove-teacher" style="flex:1; padding:12px; background:#ef4444; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">삭제</button>
-                <button onclick="closeModal()" style="flex:1; padding:12px; background:#334155; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">취소</button>
+            <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:10px;">
+                <button onclick="applyTeacher()" style="padding:1rem; background:var(--primary); color:white; border:none; border-radius:0.75rem; cursor:pointer; font-weight:700;">선택 교사 배치</button>
+                <button onclick="removeTeacher()" id="btn-remove-teacher" style="padding:1rem; background:rgba(239, 68, 68, 0.1); border:1px solid var(--danger); color:var(--danger); border-radius:0.75rem; cursor:pointer; font-weight:700;">이 자리 비우기</button>
+                <button onclick="closeModal()" style="padding:1rem; background:#334155; color:white; border:none; border-radius:0.75rem; cursor:pointer; font-weight:700;">취소</button>
             </div>
         </div>
     </div>
@@ -226,51 +243,328 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null, currentMode = 'student', currentDept = null;
-        let rows = 4, cols = 6, partitions = { v: [], h: [] }, localLayout = [];
+        let gridRows = 4, gridCols = 6, partitions = { v: [], h: [] };
+        let localTeachers = []; // 현재 부서의 모든 교사 (DB 원본)
         let activeEditCell = { r: 0, c: 0 };
+        let realTimeChannel = null;
 
+        // 1. 로그인 처리
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
             const pw = document.getElementById('login-pw').value;
             if(!id || !pw) return;
 
             const { data, error } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
-            if (data) { currentUser = data; initApp(); } 
-            else { document.getElementById('login-error').innerText = "접속 실패"; document.getElementById('login-error').style.display = 'block'; }
+            if (data) { 
+                currentUser = data; 
+                initApp(); 
+            } else { 
+                const err = document.getElementById('login-error');
+                err.innerText = "계정 정보가 일치하지 않습니다."; 
+                err.style.display = 'block'; 
+            }
         }
 
+        // 2. 앱 초기화
         async function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main-content').style.display = 'flex';
+            
             await fetchDeptList();
 
-            if (currentUser.grade == 1) {
+            // 권한별 메뉴 노출
+            if (currentUser.grade == 1) { // 관리자
                 document.getElementById('btn-student').style.display = 'block';
                 document.getElementById('btn-teacher').style.display = 'block';
                 document.getElementById('btn-edit').style.display = 'block';
                 switchMode('student');
-            } else if (currentUser.grade == 2) {
+            } else if (currentUser.grade == 2) { // 수신 전용(교사)
                 document.getElementById('btn-teacher').style.display = 'block';
                 switchMode('teacher');
-            } else {
+            } else { // 학생
                 document.getElementById('btn-student').style.display = 'block';
                 switchMode('student');
             }
             window.addEventListener('resize', autoScale);
         }
 
+        // 3. 부서 목록 가져오기 (t_dept 테이블)
         async function fetchDeptList() {
-            const { data } = await _supabase.from('t_partition').select('dept');
-            const uniqueDepts = data && data.length > 0 ? [...new Set(data.map(d => d.dept))] : ["본교무실", "1학년실", "2학년실", "3학년실"];
-            document.getElementById('dept-dashboard').innerHTML = uniqueDepts.map(dept => `
-                <div class="dept-card" onclick="selectDept('${dept}')">
-                    <div style="font-size: 3.5rem; margin-bottom:1rem;">🏢</div>
-                    <h3 style="margin:0; color:#fff; font-size:1.5rem;">${dept}</h3>
+            const { data, error } = await _supabase.from('t_dept').select('dept_name');
+            const depts = (data && data.length > 0) ? data.map(d => d.dept_name) : [];
+            
+            const container = document.getElementById('dept-dashboard');
+            if(depts.length === 0) {
+                container.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:var(--text-dim);">등록된 부서가 없습니다.</p>`;
+                return;
+            }
+
+            container.innerHTML = depts.map(name => `
+                <div class="dept-card" onclick="selectDept('${name}')">
+                    <div style="font-size: 3rem; margin-bottom:1rem;">🏢</div>
+                    <h3 style="margin:0; color:#fff;">${name}</h3>
                 </div>
             `).join('');
         }
 
+        // 4. 부서 선택 시
+        async function selectDept(dept) {
+            currentDept = dept;
+            document.getElementById('dashboard-view').style.display = 'none';
+            
+            if (currentMode === 'teacher') {
+                document.getElementById('teacher-view').style.display = 'flex';
+                document.getElementById('monitor-status').innerText = dept;
+                startListening();
+            } else {
+                document.getElementById('grid-view').style.display = 'block';
+                await loadDeptData();
+            }
+        }
+
+        // 5. 부서 데이터 로드 (파티션 및 교사 정보)
+        async function loadDeptData() {
+            // 파티션 설정 가져오기
+            const { data: pData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
+            if (pData) {
+                gridRows = pData.rows || 4;
+                gridCols = pData.cols || 6;
+                partitions = pData.partitions || { v: [], h: [] };
+            } else {
+                gridRows = 4; gridCols = 6; partitions = { v: [], h: [] };
+            }
+            document.getElementById('input-rows').value = gridRows;
+            document.getElementById('input-cols').value = gridCols;
+
+            // 해당 부서 교사 리스트 가져오기
+            const { data: tData } = await _supabase.from('t_teacher').select('*').eq('dept', currentDept);
+            localTeachers = tData || [];
+            
+            renderGrid();
+        }
+
+        // 6. 그리드 렌더링
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            const wrapper = document.getElementById('grid-wrapper');
+            document.getElementById('view-title').innerText = currentDept;
+            container.innerHTML = '';
+            
+            if (currentMode === 'edit') wrapper.classList.add('edit-mode');
+            else wrapper.classList.remove('edit-mode');
+
+            const gap = 15, cardW = 150, cardH = 120;
+            container.style.gridTemplateRows = `repeat(${gridRows}, ${cardH}px)`;
+            container.style.gridTemplateColumns = `repeat(${gridCols}, ${cardW}px)`;
+            container.style.gap = `${gap}px`;
+
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    const teacher = localTeachers.find(t => t.row_index === r && t.col_index === c);
+                    const seat = document.createElement('div');
+                    seat.className = teacher ? 'seat-card' : 'seat-card empty';
+                    
+                    if (teacher) {
+                        seat.innerHTML = `<h3>${teacher.name}</h3><p>${teacher.subject || ''}</p>`;
+                        seat.onclick = () => (currentMode === 'edit') ? openEditModal(r, c, teacher) : sendCall(teacher.name);
+                    } else if (currentMode === 'edit') {
+                        seat.onclick = () => openEditModal(r, c, null);
+                    }
+                    container.appendChild(seat);
+                }
+            }
+            renderPartitions(cardW, cardH, gap);
+            setTimeout(autoScale, 50);
+        }
+
+        // 7. 파티션 및 편집 트리거 생성
+        function renderPartitions(cardW, cardH, gap) {
+            const layer = document.getElementById('partition-layer');
+            const wrapper = document.getElementById('grid-wrapper');
+            layer.innerHTML = '';
+            document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
+            
+            const offset = 100, thickness = 4;
+
+            // 가로선
+            for (let r = 0; r <= gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                    const id = `r${r}c${c}`;
+                    if (currentMode === 'edit') {
+                        const trg = document.createElement('div');
+                        trg.className = 'partition-trigger';
+                        trg.style.left = `${offset + c * (cardW + gap)}px`;
+                        trg.style.top = `${offset + r * (cardH + gap) - (gap/2) - 10}px`;
+                        trg.style.width = `${cardW}px`; trg.style.height = `20px`;
+                        trg.onclick = () => togglePartition('h', id);
+                        wrapper.appendChild(trg);
+                    }
+                    if ((partitions.h || []).includes(id)) {
+                        const line = document.createElement('div');
+                        line.className = 'partition';
+                        line.style.left = `${offset + c * (cardW + gap) - (gap/2)}px`;
+                        line.style.top = `${offset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
+                        line.style.width = `${cardW + gap}px`; line.style.height = `${thickness}px`;
+                        layer.appendChild(line);
+                    }
+                }
+            }
+            // 세로선
+            for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c <= gridCols; c++) {
+                    const id = `r${r}c${c}`;
+                    if (currentMode === 'edit') {
+                        const trg = document.createElement('div');
+                        trg.className = 'partition-trigger';
+                        trg.style.left = `${offset + c * (cardW + gap) - (gap/2) - 10}px`;
+                        trg.style.top = `${offset + r * (cardH + gap)}px`;
+                        trg.style.width = `20px`; trg.style.height = `${cardH}px`;
+                        trg.onclick = () => togglePartition('v', id);
+                        wrapper.appendChild(trg);
+                    }
+                    if ((partitions.v || []).includes(id)) {
+                        const line = document.createElement('div');
+                        line.className = 'partition';
+                        line.style.left = `${offset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
+                        line.style.top = `${offset + r * (cardH + gap) - (gap/2)}px`;
+                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap}px`;
+                        layer.appendChild(line);
+                    }
+                }
+            }
+        }
+
+        // 8. 파티션 토글
+        function togglePartition(type, id) {
+            if (!partitions[type]) partitions[type] = [];
+            if (partitions[type].includes(id)) partitions[type] = partitions[type].filter(x => x !== id);
+            else partitions[type].push(id);
+            renderGrid();
+        }
+
+        // 9. 교사 배치 모달 제어
+        function openEditModal(r, c, teacher) {
+            activeEditCell = { r, c };
+            document.getElementById('modal-pos').innerText = `${r + 1}행 ${c + 1}열 좌석 설정`;
+            
+            const dropdown = document.getElementById('teacher-dropdown');
+            dropdown.innerHTML = '<option value="">좌석 비우기 (공석)</option>';
+            
+            // 모든 교사를 "이름 (과목)" 형식으로 리스팅
+            localTeachers.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.innerText = `${t.name} (${t.subject || '전공무'})`;
+                if (teacher && t.id === teacher.id) opt.selected = true;
+                dropdown.appendChild(opt);
+            });
+
+            document.getElementById('edit-modal').style.display = 'flex';
+            document.getElementById('btn-remove-teacher').style.display = teacher ? 'block' : 'none';
+        }
+
+        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        function applyTeacher() {
+            const selectedId = document.getElementById('teacher-dropdown').value;
+            
+            // 1. 현재 선택한 자리의 기존 정보 클리어
+            localTeachers.forEach(t => {
+                if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) {
+                    t.row_index = null; t.col_index = null;
+                }
+            });
+
+            // 2. 새로운 교사 배치 (이미 다른 자리에 있었다면 그 자리도 비워짐)
+            if (selectedId) {
+                const target = localTeachers.find(t => t.id == selectedId);
+                if (target) {
+                    target.row_index = activeEditCell.r;
+                    target.col_index = activeEditCell.c;
+                }
+            }
+            renderGrid();
+            closeModal();
+        }
+
+        function removeTeacher() {
+            localTeachers.forEach(t => {
+                if(t.row_index === activeEditCell.r && t.col_index === activeEditCell.c) {
+                    t.row_index = null; t.col_index = null;
+                }
+            });
+            renderGrid();
+            closeModal();
+        }
+
+        function updateGridSize() {
+            gridRows = parseInt(document.getElementById('input-rows').value) || 4;
+            gridCols = parseInt(document.getElementById('input-cols').value) || 6;
+            renderGrid();
+        }
+
+        // 10. 최종 저장 (DB 반영)
+        async function saveAllSettings() {
+            showToast("설정 저장 중...");
+            try {
+                // 부서 레이아웃 정보 저장 (Upsert)
+                const { error: pErr } = await _supabase.from('t_partition').upsert({
+                    dept: currentDept,
+                    rows: gridRows,
+                    cols: gridCols,
+                    partitions: partitions
+                });
+                if(pErr) throw pErr;
+
+                // 교사 좌표 정보 일괄 업데이트
+                for (const t of localTeachers) {
+                    await _supabase.from('t_teacher').update({
+                        row_index: t.row_index,
+                        col_index: t.col_index
+                    }).eq('id', t.id);
+                }
+
+                showToast("저장 완료!");
+            } catch (err) {
+                console.error(err);
+                showToast("저장 중 오류 발생");
+            }
+        }
+
+        // 11. 호출 시스템 로직
+        async function sendCall(name) {
+            showToast(`${name} 선생님을 호출합니다.`);
+            const { error } = await _supabase.from('t_calls').insert([{ name, dept: currentDept }]);
+            if(!error) showToast("호출을 보냈습니다.");
+        }
+
+        function startListening() {
+            realTimeChannel = _supabase.channel('public:t_calls')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
+                    if (payload.new.dept === currentDept) {
+                        triggerCallEffect(payload.new.name);
+                    }
+                })
+                .subscribe();
+        }
+
+        function stopListening() { if(realTimeChannel) _supabase.removeChannel(realTimeChannel); }
+
+        function triggerCallEffect(name) {
+            const popup = document.getElementById('call-popup');
+            document.getElementById('popup-name').innerText = name;
+            popup.style.display = 'flex';
+            
+            // 음성 안내
+            const msg = new SpeechSynthesisUtterance(`${name} 선생님, 호출입니다.`);
+            msg.lang = 'ko-KR'; msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+
+            setTimeout(() => { popup.style.display = 'none'; }, 6000);
+        }
+
+        // 유틸리티
         function showDashboard() {
             currentDept = null;
             document.getElementById('dashboard-view').style.display = 'block';
@@ -279,235 +573,17 @@
             stopListening();
         }
 
-        async function selectDept(dept) {
-            currentDept = dept;
-            document.getElementById('dashboard-view').style.display = 'none';
-            if (currentMode === 'teacher') {
-                document.getElementById('teacher-view').style.display = 'flex';
-                document.getElementById('monitor-status').innerText = dept;
-                startListening();
-            } else {
-                document.getElementById('grid-view').style.display = 'block';
-                await loadLayout();
-            }
-        }
-
-        async function loadLayout() {
-            const { data: pData } = await _supabase.from('t_partition').select('*').eq('dept', currentDept).maybeSingle();
-            if (pData) { 
-                rows = pData.rows; cols = pData.cols; partitions = pData.partitions || {v:[], h:[]}; 
-                document.getElementById('input-rows').value = rows;
-                document.getElementById('input-cols').value = cols;
-            } else {
-                rows = 4; cols = 6; partitions = {v:[], h:[]};
-            }
-            const { data: tData } = await _supabase.from('t_teacher').select('*').eq('dept', currentDept);
-            localLayout = tData || [];
-            renderGrid();
-        }
-
-        function updateGridSize() {
-            rows = parseInt(document.getElementById('input-rows').value) || 4;
-            cols = parseInt(document.getElementById('input-cols').value) || 6;
-            renderGrid();
-        }
-
-        function renderGrid() {
-            document.getElementById('view-title').innerText = currentDept;
-            const container = document.getElementById('grid-container');
-            const wrapper = document.getElementById('grid-wrapper');
-            container.innerHTML = '';
-            
-            if (currentMode === 'edit') wrapper.classList.add('edit-mode');
-            else wrapper.classList.remove('edit-mode');
-
-            const gap = 15, cardW = 160, cardH = 130;
-            container.style.gridTemplateRows = `repeat(${rows}, ${cardH}px)`;
-            container.style.gridTemplateColumns = `repeat(${cols}, ${cardW}px)`;
-            container.style.gap = `${gap}px`;
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const t = localLayout.find(x => x.row_index === r && x.col_index === c);
-                    const card = document.createElement('div');
-                    card.className = t ? 'seat-card' : 'seat-card empty';
-                    if (t) {
-                        card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
-                        card.onclick = () => (currentMode === 'edit') ? openEditModal(r, c, t) : sendCall(t.name);
-                    } else if (currentMode === 'edit') {
-                        card.onclick = () => openEditModal(r, c, null);
-                    }
-                    container.appendChild(card);
-                }
-            }
-            renderPartitions(cardW, cardH, gap);
-            setTimeout(autoScale, 50);
-        }
-
-        function renderPartitions(cardW, cardH, gap) {
-            const layer = document.getElementById('partition-layer');
-            const wrapper = document.getElementById('grid-wrapper');
-            layer.innerHTML = '';
-            const thickness = 6; 
-            const offset = 200; 
-            const extra = 4; // 선 끝을 연장할 픽셀
-
-            document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
-
-            // Horizontal
-            for (let r = 0; r <= rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const id = `r${r}c${c}`;
-                    const isActive = (partitions.h || []).includes(id);
-                    const trigger = document.createElement('div');
-                    trigger.className = 'partition-trigger';
-                    trigger.style.left = `${offset + c * (cardW + gap)}px`;
-                    trigger.style.top = `${offset + r * (cardH + gap) - (gap/2) - 10}px`;
-                    trigger.style.width = `${cardW}px`; trigger.style.height = `20px`;
-                    trigger.onclick = () => togglePartition('h', id);
-                    wrapper.appendChild(trigger);
-
-                    if (isActive) {
-                        const line = document.createElement('div');
-                        line.className = 'partition';
-                        line.style.left = `${offset + c * (cardW + gap) - (gap/2) - extra}px`;
-                        line.style.top = `${offset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.width = `${cardW + gap + (extra * 2)}px`; 
-                        line.style.height = `${thickness}px`;
-                        layer.appendChild(line);
-                    }
-                }
-            }
-
-            // Vertical
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c <= cols; c++) {
-                    const id = `r${r}c${c}`;
-                    const isActive = (partitions.v || []).includes(id);
-                    const trigger = document.createElement('div');
-                    trigger.className = 'partition-trigger';
-                    trigger.style.left = `${offset + c * (cardW + gap) - (gap/2) - 10}px`;
-                    trigger.style.top = `${offset + r * (cardH + gap)}px`;
-                    trigger.style.width = `20px`; trigger.style.height = `${cardH}px`;
-                    trigger.onclick = () => togglePartition('v', id);
-                    wrapper.appendChild(trigger);
-
-                    if (isActive) {
-                        const line = document.createElement('div');
-                        line.className = 'partition';
-                        line.style.left = `${offset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.top = `${offset + r * (cardH + gap) - (gap/2) - extra}px`;
-                        line.style.width = `${thickness}px`; 
-                        line.style.height = `${cardH + gap + (extra * 2)}px`;
-                        layer.appendChild(line);
-                    }
-                }
-            }
-        }
-
-        function togglePartition(type, id) {
-            if (currentMode !== 'edit') return;
-            if (!partitions[type]) partitions[type] = [];
-            const list = partitions[type];
-            if (list.includes(id)) partitions[type] = list.filter(x => x !== id);
-            else partitions[type].push(id);
-            renderGrid();
-        }
-
-        function openEditModal(r, c, t) {
-            activeEditCell = { r, c };
-            document.getElementById('edit-modal').style.display = 'flex';
-            document.getElementById('input-teacher-name').value = t ? t.name : "";
-            document.getElementById('input-teacher-subject').value = t ? t.subject : "";
-            document.getElementById('btn-remove-teacher').style.display = t ? 'block' : 'none';
-        }
-
-        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
-
-        function applyTeacher() {
-            const name = document.getElementById('input-teacher-name').value;
-            const subject = document.getElementById('input-teacher-subject').value;
-            if (!name) return showToast("성함을 입력해주세요.");
-            
-            localLayout = localLayout.filter(x => !(x.row_index === activeEditCell.r && x.col_index === activeEditCell.c));
-            localLayout.push({ name, subject, dept: currentDept, row_index: activeEditCell.r, col_index: activeEditCell.c });
-            renderGrid();
-            closeModal();
-        }
-
-        function removeTeacher() {
-            localLayout = localLayout.filter(x => !(x.row_index === activeEditCell.r && x.col_index === activeEditCell.c));
-            renderGrid();
-            closeModal();
-        }
-
-        async function saveAllSettings() {
-            showToast("서버 저장 중...");
-            try {
-                // 1. 파티션 레이아웃 저장
-                const { error: pErr } = await _supabase.from('t_partition').upsert({
-                    dept: currentDept,
-                    rows: rows,
-                    cols: cols,
-                    partitions: partitions
-                });
-                if(pErr) throw pErr;
-
-                // 2. 해당 부서 교사 데이터 초기화 후 재생성
-                await _supabase.from('t_teacher').delete().eq('dept', currentDept);
-                if(localLayout.length > 0) {
-                    const insertData = localLayout.map(t => ({
-                        name: t.name,
-                        subject: t.subject,
-                        dept: currentDept,
-                        row_index: t.row_index,
-                        col_index: t.col_index
-                    }));
-                    const { error: tErr } = await _supabase.from('t_teacher').insert(insertData);
-                    if(tErr) throw tErr;
-                }
-                showToast("모든 설정이 저장되었습니다.");
-            } catch (err) {
-                console.error(err);
-                showToast("저장 실패: " + err.message);
-            }
-        }
-
-        async function sendCall(name) {
-            showToast(`${name} 선생님 호출 중...`);
-            await _supabase.from('t_calls').insert([{ name, dept: currentDept }]);
-            showToast("호출 완료");
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
-
-        function speak(text) {
-            const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR';
-            window.speechSynthesis.speak(u);
-        }
-
-        let channel = null;
-        function startListening() {
-            channel = _supabase.channel('db-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
-                if (payload.new.dept === currentDept) {
-                    document.getElementById('popup-name').innerText = payload.new.name;
-                    document.getElementById('call-popup').style.display = 'block';
-                    speak(`${payload.new.name} 선생님, 호출입니다.`);
-                    setTimeout(() => document.getElementById('call-popup').style.display = 'none', 7000);
-                }
-            }).subscribe();
-        }
-        function stopListening() { if(channel) _supabase.removeChannel(channel); }
-
         function switchMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`btn-${mode}`).classList.add('active');
             document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
             showDashboard();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
         }
 
         function autoScale() {
