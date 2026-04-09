@@ -68,7 +68,7 @@
         /* 메인 컨텐츠 영역 */
         main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 2rem; }
 
-        /* 부서 대시보드 (선택 화면) */
+        /* 부서 대시보드 */
         #dashboard-view { flex: 1; display: flex; flex-direction: column; }
         #dept-dashboard {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -82,7 +82,7 @@
         .dept-card:hover { transform: translateY(-10px); border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
         .dept-card h3 { font-size: 1.8rem; margin: 0; }
 
-        /* 배치도 컨테이너 - 화면의 90% 이상을 채우도록 설정 */
+        /* 배치도 컨테이너 */
         #grid-view { flex: 1; display: none; flex-direction: column; height: 100%; }
         #grid-outer-container {
             flex: 1; width: 100%; height: 100%; position: relative;
@@ -98,20 +98,20 @@
         }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
-        /* 개별 좌석 카드 - 텍스트 가독성 강화 */
+        /* 개별 좌석 카드 - 텍스트 크기 추가 확장 */
         .seat-card {
             background: #1e293b; border-radius: 1.2rem; text-align: center;
             border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
             transition: 0.2s; cursor: pointer; position: relative; z-index: 10;
             padding: 10px;
         }
-        .seat-card h3 { font-size: 2.2rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
-        .seat-card p { font-size: 1.2rem; color: var(--text-dim); margin: 8px 0 0 0; font-weight: 700; }
+        .seat-card h3 { font-size: 2.8rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
+        .seat-card p { font-size: 1.5rem; color: var(--primary); margin: 10px 0 0 0; font-weight: 800; }
         .seat-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
         .seat-card.empty h3, .seat-card.empty p { display: none; }
 
-        /* 수신 모니터 뷰 - 텍스트 크기 극대화 */
+        /* 수신 모니터 뷰 */
         #teacher-view {
             display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center;
             width: 100%; height: 100%;
@@ -130,7 +130,17 @@
         }
         .dot { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite; }
 
-        /* 공용 호출 팝업 (통합) */
+        /* 파티션 - 길이 연장하여 모서리 연결 */
+        .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; }
+        .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
+        .edit-mode .partition-trigger { display: block; }
+
+        /* 호출 안내 메시지 */
+        #call-instruction {
+            text-align: center; font-size: 1.8rem; font-weight: 800; color: var(--accent);
+            margin-bottom: 1rem; animation: fadeIn 0.5s ease-out;
+        }
+
         #call-popup {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
             z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
@@ -139,18 +149,12 @@
         .popup-content h1 { font-size: 12rem; margin: 0; color: white; animation: pulse 1s infinite; font-weight: 900; }
         .popup-content p { font-size: 4rem; color: var(--text-dim); font-weight: 800; margin-top: 2rem; }
 
-        /* 파티션 */
-        .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 0.8; }
-        .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
-        .edit-mode .partition-trigger { display: block; }
-
         #toast {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
             background: var(--primary); color: white; padding: 1rem 3rem; border-radius: 3rem;
             font-weight: 800; z-index: 10000; display: none; font-size: 1.2rem;
         }
 
-        /* 배치도 모달 */
         #edit-modal {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
             z-index: 6000; align-items: center; justify-content: center;
@@ -172,7 +176,7 @@
             <p style="color:var(--text-dim); margin-bottom:3rem; font-size:1.2rem; font-weight:700;">장유고등학교</p>
             <input type="text" id="login-id" placeholder="아이디">
             <input type="password" id="login-pw" placeholder="비밀번호">
-            <button onclick="attemptLogin()">로그인 시스템 접속</button>
+            <button onclick="attemptLogin()">시스템 접속</button>
             <p id="login-error" style="color: var(--danger); margin-top: 1.5rem; display: none; font-weight: 700;"></p>
         </div>
     </div>
@@ -211,6 +215,9 @@
                 </div>
             </div>
             
+            <!-- 호출 안내 문구 -->
+            <div id="call-instruction" style="display:none;">아래의 선생님 이름을 누르면 호출됩니다.</div>
+
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem;">
                 <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem;">◀ 부서 목록으로</button>
                 <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.2rem; color: var(--primary);">부서명</h2>
@@ -224,7 +231,7 @@
             </div>
         </div>
 
-        <!-- 수신 모니터 뷰 (교사용) -->
+        <!-- 수신 모니터 뷰 -->
         <div id="teacher-view">
             <div class="monitor-box">
                 <p style="color: var(--text-dim); font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">현재 수신 부서</p>
@@ -236,7 +243,7 @@
             </div>
         </div>
 
-        <!-- 호출 팝업 (통합) -->
+        <!-- 호출 팝업 -->
         <div id="call-popup">
             <div class="popup-content">
                 <h1 id="popup-name">교사명</h1>
@@ -318,6 +325,11 @@
             currentDept = deptName;
             document.getElementById('view-title').innerText = deptName;
             document.getElementById('dashboard-view').style.display = 'none';
+            
+            // 안내 문구 표시 여부 결정
+            const instruction = document.getElementById('call-instruction');
+            instruction.style.display = (currentMode === 'student') ? 'block' : 'none';
+
             if (currentMode === 'teacher') {
                 document.getElementById('teacher-view').style.display = 'flex';
                 document.getElementById('monitor-status').innerText = deptName;
@@ -408,9 +420,7 @@
             msg.lang = 'ko-KR'; 
             window.speechSynthesis.speak(msg);
 
-            setTimeout(() => { 
-                popup.style.display = 'none'; 
-            }, 6000);
+            setTimeout(() => { popup.style.display = 'none'; }, 6000);
         }
 
         function renderPartitions(cardW, cardH, gap) {
@@ -419,6 +429,7 @@
             layer.innerHTML = '';
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
             const thickness = 6;
+            const extraLength = 10; // 모서리 연결을 위해 조금 더 길게 처리
 
             for (let r = 0; r <= gridRows; r++) {
                 for (let c = 0; c < gridCols; c++) {
@@ -435,9 +446,9 @@
                     if ((partitions.h || []).includes(id)) {
                         const line = document.createElement('div');
                         line.className = 'partition';
-                        line.style.left = `${c * (cardW + gap) - (gap/2)}px`;
+                        line.style.left = `${c * (cardW + gap) - (gap/2) - (extraLength/2)}px`;
                         line.style.top = `${r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.width = `${cardW + gap}px`; line.style.height = `${thickness}px`;
+                        line.style.width = `${cardW + gap + extraLength}px`; line.style.height = `${thickness}px`;
                         layer.appendChild(line);
                     }
                 }
@@ -458,8 +469,8 @@
                         const line = document.createElement('div');
                         line.className = 'partition';
                         line.style.left = `${c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.top = `${r * (cardH + gap) - (gap/2)}px`;
-                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap}px`;
+                        line.style.top = `${r * (cardH + gap) - (gap/2) - (extraLength/2)}px`;
+                        line.style.width = `${thickness}px`; line.style.height = `${cardH + gap + extraLength}px`;
                         layer.appendChild(line);
                     }
                 }
@@ -522,6 +533,7 @@
             document.getElementById('dashboard-view').style.display = 'block'; 
             document.getElementById('grid-view').style.display = 'none'; 
             document.getElementById('teacher-view').style.display = 'none'; 
+            document.getElementById('call-instruction').style.display = 'none';
             stopListening(); 
         }
 
@@ -536,13 +548,11 @@
 
         function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
 
-        // 배치도 자동 스케일링 (90% 크기 조정 핵심 로직)
         function autoScale() { 
             const outer = document.getElementById('grid-outer-container'); 
             const wrapper = document.getElementById('grid-wrapper'); 
             if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
             
-            // 패딩(여백) 10% 제외
             const targetWidth = outer.clientWidth * 0.92;
             const targetHeight = outer.clientHeight * 0.92;
             
