@@ -38,95 +38,127 @@
         .login-box {
             background: var(--sidebar-bg); padding: 3rem; border-radius: 2rem;
             border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; text-align: center;
-            animation: fadeIn 0.5s ease-out;
         }
         .login-box input {
-            width: 100%; padding: 1rem; margin-bottom: 1rem; background: #1e293b;
-            border: 1px solid #334155; border-radius: 0.75rem; color: white; font-size: 1rem;
+            width: 100%; padding: 1.2rem; margin-bottom: 1rem; background: #1e293b;
+            border: 1px solid #334155; border-radius: 1rem; color: white; font-size: 1.1rem;
         }
         .login-box button {
-            width: 100%; padding: 1rem; background: var(--primary); color: white;
-            border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; font-size: 1.1rem;
+            width: 100%; padding: 1.2rem; background: var(--primary); color: white;
+            border: none; border-radius: 1rem; font-weight: 800; cursor: pointer; font-size: 1.2rem;
         }
 
         /* 사이드바 */
         nav {
-            width: 260px; background: var(--sidebar-bg); padding: 2rem 1rem;
+            width: 280px; background: var(--sidebar-bg); padding: 2.5rem 1.5rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
         }
-        .sidebar-header { margin-bottom: 2.5rem; padding: 0 0.5rem; }
-        .sidebar-header h1 { font-size: 1.4rem; font-weight: 800; margin: 0; color: white; }
-        .sidebar-header p { font-size: 0.9rem; color: var(--text-dim); margin-top: 5px; }
+        .sidebar-header { margin-bottom: 3rem; }
+        .sidebar-header h1 { font-size: 1.6rem; font-weight: 800; margin: 0; color: white; line-height: 1.2; }
+        .sidebar-header p { font-size: 1rem; color: var(--text-dim); margin-top: 8px; font-weight: 600; }
 
         .menu-item {
-            padding: 1rem; border-radius: 0.75rem; cursor: pointer; margin-bottom: 0.5rem;
-            color: var(--text-dim); font-weight: 600; transition: 0.2s; display: none;
+            padding: 1.2rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.8rem;
+            color: var(--text-dim); font-weight: 700; transition: 0.2s; display: none;
+            font-size: 1.1rem;
         }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
-        /* 메인 컨텐츠 */
-        main { flex: 1; padding: 2rem; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        /* 메인 컨텐츠 영역 */
+        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 2rem; }
 
-        /* 부서 대시보드 */
+        /* 부서 대시보드 (선택 화면) */
+        #dashboard-view { flex: 1; display: flex; flex-direction: column; }
         #dept-dashboard {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem; margin-top: 2rem; overflow-y: auto; padding-bottom: 2rem;
         }
         .dept-card {
-            background: var(--card-bg); padding: 3rem 1.5rem; border-radius: 1.5rem;
+            background: var(--card-bg); padding: 4rem 2rem; border-radius: 2rem;
             border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center;
-            transition: 0.3s; animation: fadeIn 0.4s ease-out;
+            transition: 0.3s;
         }
-        .dept-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .dept-card:hover { transform: translateY(-10px); border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .dept-card h3 { font-size: 1.8rem; margin: 0; }
 
-        /* 그리드 뷰 */
+        /* 배치도 컨테이너 - 화면의 90% 이상을 채우도록 설정 */
+        #grid-view { flex: 1; display: none; flex-direction: column; height: 100%; }
         #grid-outer-container {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            background: var(--card-bg); border-radius: 2rem; overflow: hidden; position: relative;
-            margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05);
+            flex: 1; width: 100%; height: 100%; position: relative;
+            background: rgba(15, 23, 42, 0.5); border-radius: 2.5rem; 
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        #grid-wrapper { position: relative; padding: 100px; transform-origin: center center; }
+        #grid-wrapper { 
+            position: relative; 
+            display: inline-block;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+        }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
+        /* 개별 좌석 카드 - 텍스트 가독성 강화 */
         .seat-card {
-            background: #0f172a; border-radius: 0.75rem; padding: 1rem; text-align: center;
-            border: 1px solid #334155; display: flex; flex-direction: column; justify-content: center;
-            width: 150px; height: 120px; transition: 0.2s; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; z-index: 10;
+            background: #1e293b; border-radius: 1.2rem; text-align: center;
+            border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
+            transition: 0.2s; cursor: pointer; position: relative; z-index: 10;
+            padding: 10px;
         }
-        .seat-card.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
-        .seat-card.empty { background: transparent; border: 1px dashed rgba(255,255,255,0.1); cursor: default; }
+        .seat-card h3 { font-size: 2.2rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
+        .seat-card p { font-size: 1.2rem; color: var(--text-dim); margin: 8px 0 0 0; font-weight: 700; }
+        .seat-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+        .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
+        .seat-card.empty h3, .seat-card.empty p { display: none; }
 
-        /* 파티션 */
-        .partition { position: absolute; background: var(--text-dim); z-index: 5; pointer-events: none; opacity: 0.6; }
-        .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
-        .edit-mode .partition-trigger { display: block; }
-
-        /* 모달 및 알림 */
-        #edit-modal {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            z-index: 6000; align-items: center; justify-content: center;
+        /* 수신 모니터 뷰 - 텍스트 크기 극대화 */
+        #teacher-view {
+            display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
         }
-        .modal-content {
-            background: var(--sidebar-bg); padding: 2rem; border-radius: 1.5rem; width: 400px;
-            border: 1px solid rgba(255,255,255,0.1);
+        .monitor-box {
+            width: 90%; height: 80%; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            background: var(--sidebar-bg); border-radius: 4rem; 
+            border: 4px solid var(--primary); box-shadow: 0 0 50px var(--primary-glow);
+            text-align: center; padding: 2rem;
         }
-
-        #toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--primary); color: white; padding: 0.75rem 2rem; border-radius: 2rem;
-            font-weight: 700; z-index: 10000; display: none;
+        #monitor-status { font-size: 10rem; font-weight: 900; margin: 0; color: white; line-height: 1; }
+        .monitor-badge { 
+            color: var(--accent); font-size: 2.5rem; font-weight: 800; margin-top: 3rem;
+            display: flex; align-items: center; gap: 1rem;
         }
+        .dot { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite; }
 
-        /* 공용 호출 팝업 */
+        /* 공용 호출 팝업 (통합) */
         #call-popup {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
             z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
-            border: 15px solid var(--primary);
-            text-align: center;
+            border: 20px solid var(--primary); text-align: center;
         }
-        .popup-content h1 { font-size: 8rem; margin: 0; color: white; animation: pulse 1s infinite; }
-        .popup-content p { font-size: 3rem; color: var(--text-dim); font-weight: 700; margin-top: 15px; }
+        .popup-content h1 { font-size: 12rem; margin: 0; color: white; animation: pulse 1s infinite; font-weight: 900; }
+        .popup-content p { font-size: 4rem; color: var(--text-dim); font-weight: 800; margin-top: 2rem; }
+
+        /* 파티션 */
+        .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 0.8; }
+        .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
+        .edit-mode .partition-trigger { display: block; }
+
+        #toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: white; padding: 1rem 3rem; border-radius: 3rem;
+            font-weight: 800; z-index: 10000; display: none; font-size: 1.2rem;
+        }
+
+        /* 배치도 모달 */
+        #edit-modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            z-index: 6000; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: var(--sidebar-bg); padding: 3rem; border-radius: 2rem; width: 500px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -136,12 +168,12 @@
     <!-- 로그인 화면 -->
     <div id="login-overlay">
         <div class="login-box">
-            <h1 style="color:white; font-size:2.2rem; font-weight:800; margin-bottom:0.5rem;">교사 호출 시스템</h1>
-            <p style="color:var(--text-dim); margin-bottom:2.5rem; font-size:1.1rem; font-weight:600;">장유고등학교</p>
+            <h1 style="color:white; font-size:2.5rem; font-weight:900; margin-bottom:0.5rem;">교사 호출 시스템</h1>
+            <p style="color:var(--text-dim); margin-bottom:3rem; font-size:1.2rem; font-weight:700;">장유고등학교</p>
             <input type="text" id="login-id" placeholder="아이디">
             <input type="password" id="login-pw" placeholder="비밀번호">
-            <button onclick="attemptLogin()">로그인</button>
-            <p id="login-error" style="color: var(--danger); margin-top: 1rem; display: none; font-weight: 600;"></p>
+            <button onclick="attemptLogin()">로그인 시스템 접속</button>
+            <p id="login-error" style="color: var(--danger); margin-top: 1.5rem; display: none; font-weight: 700;"></p>
         </div>
     </div>
 
@@ -154,34 +186,34 @@
         <div id="btn-student" class="menu-item" onclick="switchMode('student')">🏢 부서별 호출</div>
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 실시간 수신 모니터</div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 편집</div>
-        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.8rem; border-radius: 0.75rem; cursor: pointer; font-weight: 700;">로그아웃</button>
+        <button onclick="location.reload()" style="margin-top: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem;">로그아웃</button>
     </nav>
 
     <main id="main-content" style="display: none;">
         <!-- 부서 대시보드 -->
         <div id="dashboard-view">
-            <h1 style="font-size: 2rem; font-weight:800;">부서를 선택해 주세요</h1>
+            <h1 style="font-size: 2.5rem; font-weight:900; margin-bottom: 2rem;">부서를 선택해 주세요</h1>
             <div id="dept-dashboard"></div>
         </div>
 
         <!-- 그리드 배치/호출 뷰 -->
-        <div id="grid-view" style="display: none;">
-            <div id="edit-header" style="display: none; background: #1e293b; padding: 1rem; border-radius: 1rem; margin-bottom: 1rem; align-items: center; gap: 1rem; border: 1px solid var(--primary);">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
+        <div id="grid-view">
+            <div id="edit-header" style="display: none; background: #1e293b; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1.5rem; align-items: center; gap: 1.5rem; border: 2px solid var(--primary);">
+                <div style="display:flex; align-items:center; gap:0.8rem; font-weight:700;">
                     <span>행:</span>
-                    <input type="number" id="input-rows" value="4" style="width:50px; background:#0f172a; border:1px solid #334155; color:white;">
+                    <input type="number" id="input-rows" value="4" style="width:60px; padding: 5px; background:#0f172a; border:1px solid #334155; color:white; font-size:1.1rem;">
                     <span>열:</span>
-                    <input type="number" id="input-cols" value="6" style="width:50px; background:#0f172a; border:1px solid #334155; color:white;">
-                    <button onclick="updateGridSize()" style="background:#334155; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">적용</button>
+                    <input type="number" id="input-cols" value="6" style="width:60px; padding: 5px; background:#0f172a; border:1px solid #334155; color:white; font-size:1.1rem;">
+                    <button onclick="updateGridSize()" style="background:#334155; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700;">그리드 적용</button>
                 </div>
                 <div style="flex:1; text-align:right;">
-                    <button onclick="saveAllSettings()" style="background:var(--primary); color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer;">최종 저장</button>
+                    <button onclick="saveAllSettings()" style="background:var(--primary); color:white; border:none; padding:12px 24px; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">배치도 최종 저장</button>
                 </div>
             </div>
             
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1rem;">
-                <button onclick="showDashboard()" style="background:none; border:none; color:var(--primary); font-weight:700; cursor:pointer;">◀ 부서 목록</button>
-                <h2 id="view-title" style="margin:0; font-weight:800;">부서명</h2>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem;">
+                <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem;">◀ 부서 목록으로</button>
+                <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.2rem; color: var(--primary);">부서명</h2>
             </div>
 
             <div id="grid-outer-container">
@@ -192,11 +224,15 @@
             </div>
         </div>
 
-        <!-- 수신 모니터 뷰 -->
-        <div id="teacher-view" style="display: none; flex: 1; align-items: center; justify-content: center;">
-            <div style="text-align: center; background: var(--sidebar-bg); padding: 5rem; border-radius: 3rem; border: 1px solid var(--primary);">
-                <h1 id="monitor-status" style="font-size: 4rem; margin: 0;">부서명</h1>
-                <p style="color: var(--accent); font-size: 1.5rem; font-weight: 800; margin-top: 1.5rem;">● 실시간 호출 대기 중</p>
+        <!-- 수신 모니터 뷰 (교사용) -->
+        <div id="teacher-view">
+            <div class="monitor-box">
+                <p style="color: var(--text-dim); font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">현재 수신 부서</p>
+                <h1 id="monitor-status">부서명</h1>
+                <div class="monitor-badge">
+                    <div class="dot"></div>
+                    실시간 호출 대기 중
+                </div>
             </div>
         </div>
 
@@ -212,13 +248,13 @@
     <!-- 자리 배치 모달 -->
     <div id="edit-modal">
         <div class="modal-content">
-            <h3 style="margin-top:0; color:white;">교사 자리 배치</h3>
-            <p id="modal-pos" style="color:var(--text-dim); font-size:0.8rem;"></p>
-            <select id="teacher-dropdown" style="width:100%; padding:0.8rem; margin: 1rem 0; background:#1e293b; color:white; border:1px solid #334155; border-radius:0.5rem;"></select>
-            <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                <button onclick="applyTeacher()" style="padding:0.8rem; background:var(--primary); color:white; border:none; border-radius:0.5rem; cursor:pointer; font-weight:700;">배치하기</button>
-                <button onclick="removeTeacher()" id="btn-remove-teacher" style="padding:0.8rem; background:rgba(239, 68, 68, 0.1); border:1px solid var(--danger); color:var(--danger); border-radius:0.5rem; cursor:pointer; font-weight:700;">자리 비우기</button>
-                <button onclick="closeModal()" style="padding:0.8rem; background:#334155; color:white; border:none; border-radius:0.5rem; cursor:pointer;">취소</button>
+            <h2 style="margin-top:0; color:white; font-weight:900;">교사 자리 배치</h2>
+            <p id="modal-pos" style="color:var(--text-dim); font-size:1.1rem; margin-bottom:2rem;"></p>
+            <select id="teacher-dropdown" style="width:100%; padding:1.2rem; margin-bottom: 2rem; background:#1e293b; color:white; border:2px solid #334155; border-radius:1rem; font-size:1.2rem;"></select>
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+                <button onclick="applyTeacher()" style="padding:1.2rem; background:var(--primary); color:white; border:none; border-radius:1rem; cursor:pointer; font-weight:800; font-size:1.2rem;">이 자리에 배치</button>
+                <button onclick="removeTeacher()" id="btn-remove-teacher" style="padding:1rem; background:rgba(239, 68, 68, 0.1); border:1px solid var(--danger); color:var(--danger); border-radius:1rem; cursor:pointer; font-weight:800;">자리 비우기</button>
+                <button onclick="closeModal()" style="padding:1rem; background:#334155; color:white; border:none; border-radius:1rem; cursor:pointer; font-weight:700;">취소</button>
             </div>
         </div>
     </div>
@@ -231,7 +267,7 @@
         let currentUser = null, currentMode = 'student', currentDept = null;
         let gridRows = 4, gridCols = 6, partitions = { v: [], h: [] };
         let localTeachers = [], activeEditCell = { r: 0, c: 0 }, realTimeChannel = null;
-        let isCallingLock = false; // 호출 중 클릭 잠금 플래그
+        let isCallingLock = false;
 
         async function attemptLogin() {
             const id = document.getElementById('login-id').value;
@@ -272,21 +308,22 @@
             if(!data) return;
             container.innerHTML = data.map(dept => `
                 <div class="dept-card" onclick="selectDept('${dept.name}')">
-                    <div style="font-size: 3rem; margin-bottom:1rem;">🏢</div>
-                    <h3 style="margin:0; color:#fff;">${dept.name}</h3>
+                    <div style="font-size: 4rem; margin-bottom:1.5rem;">🏢</div>
+                    <h3 style="color:#fff; font-weight:900;">${dept.name}</h3>
                 </div>
             `).join('');
         }
 
         async function selectDept(deptName) {
             currentDept = deptName;
+            document.getElementById('view-title').innerText = deptName;
             document.getElementById('dashboard-view').style.display = 'none';
             if (currentMode === 'teacher') {
                 document.getElementById('teacher-view').style.display = 'flex';
                 document.getElementById('monitor-status').innerText = deptName;
                 startListening();
             } else {
-                document.getElementById('grid-view').style.display = 'block';
+                document.getElementById('grid-view').style.display = 'flex';
                 await loadDeptData();
             }
         }
@@ -306,7 +343,7 @@
             container.innerHTML = '';
             if (currentMode === 'edit') wrapper.classList.add('edit-mode'); else wrapper.classList.remove('edit-mode');
             
-            const gap = 15, cardW = 150, cardH = 120;
+            const gap = 20, cardW = 200, cardH = 160;
             container.style.gridTemplateRows = `repeat(${gridRows}, ${cardH}px)`;
             container.style.gridTemplateColumns = `repeat(${gridCols}, ${cardW}px)`;
             container.style.gap = `${gap}px`;
@@ -317,7 +354,6 @@
                     const seat = document.createElement('div');
                     seat.className = teacher ? 'seat-card' : 'seat-card empty';
                     
-                    // 호출 중이면 학생 모드에서 비활성화
                     if(isCallingLock && currentMode === 'student') seat.classList.add('disabled');
                     
                     if (teacher) {
@@ -330,15 +366,12 @@
                 }
             }
             renderPartitions(cardW, cardH, gap);
-            setTimeout(autoScale, 50);
+            setTimeout(autoScale, 100);
         }
 
-        // 학생 화면: 호출 시퀀스
         async function initiateCall(name) {
             if(isCallingLock) return;
             isCallingLock = true;
-            
-            // 모든 자리 일시적 클릭 차단 스타일
             renderGrid();
 
             const popup = document.getElementById('call-popup');
@@ -350,10 +383,8 @@
             pStatus.style.color = "var(--primary)";
             popup.style.display = 'flex';
 
-            // DB 알림 전송
             await _supabase.from('t_calls').insert([{ name, dept: currentDept }]);
 
-            // 3초 후 팝업 닫고 잠금 해제
             setTimeout(() => {
                 popup.style.display = 'none';
                 isCallingLock = false;
@@ -361,7 +392,6 @@
             }, 3000);
         }
 
-        // 수신 화면 전용: 실시간 알림 효과
         function triggerCallEffect(name) {
             if(currentMode !== 'teacher') return;
             
@@ -378,10 +408,9 @@
             msg.lang = 'ko-KR'; 
             window.speechSynthesis.speak(msg);
 
-            // 수신측은 5초간 보여줌
             setTimeout(() => { 
-                if(!isCallingLock) popup.style.display = 'none'; 
-            }, 5000);
+                popup.style.display = 'none'; 
+            }, 6000);
         }
 
         function renderPartitions(cardW, cardH, gap) {
@@ -389,7 +418,7 @@
             const wrapper = document.getElementById('grid-wrapper');
             layer.innerHTML = '';
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
-            const offset = 100, thickness = 4;
+            const thickness = 6;
 
             for (let r = 0; r <= gridRows; r++) {
                 for (let c = 0; c < gridCols; c++) {
@@ -397,17 +426,17 @@
                     if (currentMode === 'edit') {
                         const trg = document.createElement('div');
                         trg.className = 'partition-trigger';
-                        trg.style.left = `${offset + c * (cardW + gap)}px`;
-                        trg.style.top = `${offset + r * (cardH + gap) - (gap/2) - 10}px`;
-                        trg.style.width = `${cardW}px`; trg.style.height = `20px`;
+                        trg.style.left = `${c * (cardW + gap)}px`;
+                        trg.style.top = `${r * (cardH + gap) - (gap/2) - 15}px`;
+                        trg.style.width = `${cardW}px`; trg.style.height = `30px`;
                         trg.onclick = () => togglePartition('h', id);
                         wrapper.appendChild(trg);
                     }
                     if ((partitions.h || []).includes(id)) {
                         const line = document.createElement('div');
                         line.className = 'partition';
-                        line.style.left = `${offset + c * (cardW + gap) - (gap/2)}px`;
-                        line.style.top = `${offset + r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
+                        line.style.left = `${c * (cardW + gap) - (gap/2)}px`;
+                        line.style.top = `${r * (cardH + gap) - (gap/2) - (thickness/2)}px`;
                         line.style.width = `${cardW + gap}px`; line.style.height = `${thickness}px`;
                         layer.appendChild(line);
                     }
@@ -419,17 +448,17 @@
                     if (currentMode === 'edit') {
                         const trg = document.createElement('div');
                         trg.className = 'partition-trigger';
-                        trg.style.left = `${offset + c * (cardW + gap) - (gap/2) - 10}px`;
-                        trg.style.top = `${offset + r * (cardH + gap)}px`;
-                        trg.style.width = `20px`; trg.style.height = `${cardH}px`;
+                        trg.style.left = `${c * (cardW + gap) - (gap/2) - 15}px`;
+                        trg.style.top = `${r * (cardH + gap)}px`;
+                        trg.style.width = `30px`; trg.style.height = `${cardH}px`;
                         trg.onclick = () => togglePartition('v', id);
                         wrapper.appendChild(trg);
                     }
                     if ((partitions.v || []).includes(id)) {
                         const line = document.createElement('div');
                         line.className = 'partition';
-                        line.style.left = `${offset + c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
-                        line.style.top = `${offset + r * (cardH + gap) - (gap/2)}px`;
+                        line.style.left = `${c * (cardW + gap) - (gap/2) - (thickness/2)}px`;
+                        line.style.top = `${r * (cardH + gap) - (gap/2)}px`;
                         line.style.width = `${thickness}px`; line.style.height = `${cardH + gap}px`;
                         layer.appendChild(line);
                     }
@@ -446,7 +475,7 @@
 
         function openEditModal(r, c, teacher) {
             activeEditCell = { r, c };
-            document.getElementById('modal-pos').innerText = `${r + 1}행 ${c + 1}열 설정`;
+            document.getElementById('modal-pos').innerText = `${r + 1}행 ${c + 1}열 설정 중`;
             const dropdown = document.getElementById('teacher-dropdown');
             dropdown.innerHTML = '<option value="">좌석 비우기</option>';
             localTeachers.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
@@ -477,7 +506,7 @@
             showToast("저장 중...");
             await _supabase.from('t_partition').upsert({ dept: currentDept, rows: gridRows, cols: gridCols, partitions: partitions });
             for (const t of localTeachers) await _supabase.from('t_teacher').update({ row_index: t.row_index, col_index: t.col_index }).eq('id', t.id);
-            showToast("저장 완료!");
+            showToast("성공적으로 저장되었습니다.");
         }
 
         function startListening() {
@@ -487,7 +516,15 @@
                 }).subscribe();
         }
         function stopListening() { if(realTimeChannel) _supabase.removeChannel(realTimeChannel); }
-        function showDashboard() { currentDept = null; document.getElementById('dashboard-view').style.display = 'block'; document.getElementById('grid-view').style.display = 'none'; document.getElementById('teacher-view').style.display = 'none'; stopListening(); }
+        
+        function showDashboard() { 
+            currentDept = null; 
+            document.getElementById('dashboard-view').style.display = 'block'; 
+            document.getElementById('grid-view').style.display = 'none'; 
+            document.getElementById('teacher-view').style.display = 'none'; 
+            stopListening(); 
+        }
+
         function switchMode(mode) { 
             currentMode = mode; 
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); 
@@ -496,12 +533,23 @@
             document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none'; 
             showDashboard(); 
         }
+
         function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+
+        // 배치도 자동 스케일링 (90% 크기 조정 핵심 로직)
         function autoScale() { 
             const outer = document.getElementById('grid-outer-container'); 
             const wrapper = document.getElementById('grid-wrapper'); 
             if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
-            const scale = Math.min((outer.clientWidth - 40) / wrapper.offsetWidth, (outer.clientHeight - 40) / wrapper.offsetHeight); 
+            
+            // 패딩(여백) 10% 제외
+            const targetWidth = outer.clientWidth * 0.92;
+            const targetHeight = outer.clientHeight * 0.92;
+            
+            const scaleX = targetWidth / wrapper.offsetWidth;
+            const scaleY = targetHeight / wrapper.offsetHeight;
+            const scale = Math.min(scaleX, scaleY); 
+            
             wrapper.style.transform = `scale(${scale})`; 
         }
     </script>
