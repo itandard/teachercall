@@ -48,11 +48,11 @@
             border: none; border-radius: 1rem; font-weight: 800; cursor: pointer; font-size: 1.2rem;
         }
 
-        /* 사이드바 - 가운데 정렬 적용 */
+        /* 사이드바 */
         nav {
             width: 280px; background: var(--sidebar-bg); padding: 2.5rem 1.5rem;
             display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.05);
-            flex-shrink: 0; text-align: center; /* 텍스트 가운데 정렬 */
+            flex-shrink: 0; text-align: center;
         }
         .sidebar-header { margin-bottom: 3rem; }
         .sidebar-header h1 { font-size: 1.6rem; font-weight: 800; margin: 0; color: white; line-height: 1.2; }
@@ -60,9 +60,9 @@
 
         .menu-item {
             padding: 1.2rem; border-radius: 1rem; cursor: pointer; margin-bottom: 0.8rem;
-            color: var(--text-dim); font-weight: 700; transition: 0.2s; display: none;
+            color: var(--text-dim); font-weight: 700; transition: 0.2s;
             font-size: 1.1rem;
-            display: flex; align-items: center; justify-content: center; /* 내부 아이콘/텍스트 가운데 정렬 */
+            display: flex; align-items: center; justify-content: center;
             border: 1px solid transparent;
         }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
@@ -71,18 +71,23 @@
         main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 2rem; }
 
         /* 부서 대시보드 */
-        #dashboard-view { flex: 1; display: flex; flex-direction: column; }
+        #dashboard-view { flex: 1; display: flex; flex-direction: column; text-align: center; }
+        .dashboard-title {
+            display: inline-block; width: 100%; text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--accent);
+            margin-bottom: 2rem; background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 1rem;
+            animation: fadeIn 0.5s ease-out;
+        }
         #dept-dashboard {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem; margin-top: 2rem; overflow-y: auto; padding-bottom: 2rem;
+            gap: 1.5rem; overflow-y: auto; padding-bottom: 2rem;
         }
         .dept-card {
-            background: var(--card-bg); padding: 4rem 2rem; border-radius: 2rem;
+            background: var(--card-bg); padding: 3rem 2rem; border-radius: 2rem;
             border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center;
             transition: 0.3s;
         }
         .dept-card:hover { transform: translateY(-10px); border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
-        .dept-card h3 { font-size: 1.8rem; margin: 0; }
+        .dept-card h3 { font-size: 1.8rem; margin: 0; color: #fff; font-weight: 900; }
 
         /* 배치도 컨테이너 */
         #grid-view { flex: 1; display: none; flex-direction: column; height: 100%; }
@@ -92,58 +97,34 @@
             overflow: hidden; display: flex; align-items: center; justify-content: center;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        #grid-wrapper { 
-            position: relative; 
-            display: inline-block;
-            transition: transform 0.1s ease-out;
-            transform-origin: center center;
-        }
+        #grid-wrapper { position: relative; display: inline-block; transition: transform 0.1s ease-out; transform-origin: center center; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
-        /* 개별 좌석 카드 */
+        /* 개별 좌석 카드 - 폰트 크기 수정 */
         .seat-card {
             background: #1e293b; border-radius: 1.2rem; text-align: center;
             border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
-            transition: 0.2s; cursor: pointer; position: relative; z-index: 10;
-            padding: 10px;
+            transition: 0.2s; cursor: pointer; position: relative; z-index: 10; padding: 10px;
         }
-        .seat-card h3 { font-size: 2.8rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
-        .seat-card p { font-size: 1.5rem; color: var(--primary); margin: 10px 0 0 0; font-weight: 800; }
+        .seat-card h3 { font-size: 3.5rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
+        .seat-card p { font-size: 1.8rem; color: var(--primary); margin: 12px 0 0 0; font-weight: 800; }
         .seat-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
         .seat-card.empty h3, .seat-card.empty p { display: none; }
 
-        /* 수신 모니터 뷰 */
-        #teacher-view {
-            display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center;
-            width: 100%; height: 100%;
-        }
-        .monitor-box {
-            width: 90%; height: 80%; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
-            background: var(--sidebar-bg); border-radius: 4rem; 
-            border: 4px solid var(--primary); box-shadow: 0 0 50px var(--primary-glow);
-            text-align: center; padding: 2rem;
-        }
-        #monitor-status { font-size: 10rem; font-weight: 900; margin: 0; color: white; line-height: 1; }
-        .monitor-badge { 
-            color: var(--accent); font-size: 2.5rem; font-weight: 800; margin-top: 3rem;
-            display: flex; align-items: center; gap: 1rem;
-        }
-        .dot { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite; }
-
-        /* 파티션 */
-        .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; }
+        /* 파티션 - 길이 최적화 */
+        .partition { position: absolute; background: #64748b; z-index: 5; pointer-events: none; opacity: 1; border-radius: 3px; }
         .partition-trigger { position: absolute; background: transparent; cursor: pointer; z-index: 30; display: none; }
         .edit-mode .partition-trigger { display: block; }
 
-        /* 호출 안내 메시지 수정 - 크기 키움 */
+        /* 호출 안내 메시지 */
         #call-instruction {
             text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--accent);
             margin-bottom: 1.5rem; animation: fadeIn 0.5s ease-out;
-            background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 1rem;
+            background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 1rem;
         }
 
+        /* 호출 팝업 */
         #call-popup {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
             z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
@@ -151,6 +132,17 @@
         }
         .popup-content h1 { font-size: 12rem; margin: 0; color: white; animation: pulse 1s infinite; font-weight: 900; }
         .popup-content p { font-size: 4rem; color: var(--text-dim); font-weight: 800; margin-top: 2rem; }
+
+        /* 수신 모니터 */
+        #teacher-view { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        .monitor-box {
+            width: 90%; height: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--sidebar-bg); border-radius: 4rem; border: 4px solid var(--primary); box-shadow: 0 0 50px var(--primary-glow);
+            text-align: center; padding: 2rem;
+        }
+        #monitor-status { font-size: 10rem; font-weight: 900; margin: 0; color: white; line-height: 1; }
+        .monitor-badge { color: var(--accent); font-size: 2.5rem; font-weight: 800; margin-top: 3rem; display: flex; align-items: center; gap: 1rem; }
+        .dot { width: 25px; height: 25px; background: var(--accent); border-radius: 50%; animation: pulse 1s infinite; }
 
         #toast {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
@@ -172,7 +164,6 @@
 
     <div id="toast">알림</div>
 
-    <!-- 로그인 화면 -->
     <div id="login-overlay">
         <div class="login-box">
             <h1 style="color:white; font-size:2.5rem; font-weight:900; margin-bottom:0.5rem;">교사 호출 시스템</h1>
@@ -184,7 +175,6 @@
         </div>
     </div>
 
-    <!-- 사이드바 -->
     <nav id="sidebar" style="display: none;">
         <div class="sidebar-header">
             <h1>교사 호출 시스템</h1>
@@ -197,13 +187,11 @@
     </nav>
 
     <main id="main-content" style="display: none;">
-        <!-- 부서 대시보드 -->
         <div id="dashboard-view">
-            <h1 style="font-size: 2.5rem; font-weight:900; margin-bottom: 2rem;">부서를 선택해 주세요</h1>
+            <div class="dashboard-title">부서를 선택해 주세요</div>
             <div id="dept-dashboard"></div>
         </div>
 
-        <!-- 그리드 배치/호출 뷰 -->
         <div id="grid-view">
             <div id="edit-header" style="display: none; background: #1e293b; padding: 1.2rem; border-radius: 1.5rem; margin-bottom: 1.5rem; align-items: center; gap: 1.5rem; border: 2px solid var(--primary);">
                 <div style="display:flex; align-items:center; gap:0.8rem; font-weight:700;">
@@ -218,13 +206,11 @@
                 </div>
             </div>
             
-            <!-- 상단 헤더 - 한 줄로 배치하도록 수정 -->
             <div id="grid-header-row" style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem; gap: 20px;">
                 <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem; flex-shrink: 0;">◀ 부서 목록으로</button>
                 <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.5rem; color: var(--primary); text-align: right; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">부서명</h2>
             </div>
 
-            <!-- 호출 안내 문구 -->
             <div id="call-instruction" style="display:none;">아래의 선생님 이름을 누르면 호출됩니다.</div>
 
             <div id="grid-outer-container">
@@ -235,7 +221,6 @@
             </div>
         </div>
 
-        <!-- 수신 모니터 뷰 -->
         <div id="teacher-view">
             <div class="monitor-box">
                 <p style="color: var(--text-dim); font-size: 2rem; font-weight: 700; margin-bottom: 2rem;">현재 수신 부서</p>
@@ -247,7 +232,6 @@
             </div>
         </div>
 
-        <!-- 호출 팝업 -->
         <div id="call-popup">
             <div class="popup-content">
                 <h1 id="popup-name">교사명</h1>
@@ -256,7 +240,6 @@
         </div>
     </main>
 
-    <!-- 자리 배치 모달 -->
     <div id="edit-modal">
         <div class="modal-content">
             <h2 style="margin-top:0; color:white; font-weight:900;">교사 자리 배치</h2>
@@ -285,11 +268,7 @@
             const pw = document.getElementById('login-pw').value;
             const { data, error } = await _supabase.from('t_user').select('*').eq('user_id', id).eq('user_pw', pw).maybeSingle();
             if (data) { currentUser = data; initApp(); } 
-            else { 
-                const err = document.getElementById('login-error');
-                err.innerText = "계정 정보가 일치하지 않습니다."; 
-                err.style.display = 'block'; 
-            }
+            else { document.getElementById('login-error').innerText = "계정 정보가 일치하지 않습니다."; document.getElementById('login-error').style.display = 'block'; }
         }
 
         async function initApp() {
@@ -320,7 +299,7 @@
             container.innerHTML = data.map(dept => `
                 <div class="dept-card" onclick="selectDept('${dept.name}')">
                     <div style="font-size: 4rem; margin-bottom:1.5rem;">🏢</div>
-                    <h3 style="color:#fff; font-weight:900;">${dept.name}</h3>
+                    <h3>${dept.name}</h3>
                 </div>
             `).join('');
         }
@@ -368,9 +347,7 @@
                     const teacher = localTeachers.find(t => t.row_index === r && t.col_index === c);
                     const seat = document.createElement('div');
                     seat.className = teacher ? 'seat-card' : 'seat-card empty';
-                    
                     if(isCallingLock && currentMode === 'student') seat.classList.add('disabled');
-                    
                     if (teacher) {
                         seat.innerHTML = `<h3>${teacher.name}</h3><p>${teacher.subject || ''}</p>`;
                         seat.onclick = () => (currentMode === 'edit') ? openEditModal(r, c, teacher) : initiateCall(teacher.name);
@@ -388,41 +365,29 @@
             if(isCallingLock) return;
             isCallingLock = true;
             renderGrid();
-
             const popup = document.getElementById('call-popup');
             const pName = document.getElementById('popup-name');
             const pStatus = document.getElementById('popup-status');
-            
             pName.innerText = name;
             pStatus.innerText = "선생님을 호출 중입니다...";
             pStatus.style.color = "var(--primary)";
             popup.style.display = 'flex';
-
             await _supabase.from('t_calls').insert([{ name, dept: currentDept }]);
-
-            setTimeout(() => {
-                popup.style.display = 'none';
-                isCallingLock = false;
-                renderGrid();
-            }, 3000);
+            setTimeout(() => { popup.style.display = 'none'; isCallingLock = false; renderGrid(); }, 3000);
         }
 
         function triggerCallEffect(name) {
             if(currentMode !== 'teacher') return;
-            
             const popup = document.getElementById('call-popup');
             const pName = document.getElementById('popup-name');
             const pStatus = document.getElementById('popup-status');
-            
             pName.innerText = name;
             pStatus.innerText = "선생님, 호출입니다!";
             pStatus.style.color = "var(--text-dim)";
             popup.style.display = 'flex';
-
             const msg = new SpeechSynthesisUtterance(`${name} 선생님, 호출입니다.`);
             msg.lang = 'ko-KR'; 
             window.speechSynthesis.speak(msg);
-
             setTimeout(() => { popup.style.display = 'none'; }, 6000);
         }
 
@@ -432,7 +397,7 @@
             layer.innerHTML = '';
             document.querySelectorAll('.partition-trigger').forEach(el => el.remove());
             const thickness = 6;
-            const extraLength = 10;
+            const extraLength = 4; // 너무 길지 않게 살짝만 삐져나오게 조정 (0에서 4 사이 최적값)
 
             for (let r = 0; r <= gridRows; r++) {
                 for (let c = 0; c < gridCols; c++) {
@@ -555,14 +520,7 @@
             const outer = document.getElementById('grid-outer-container'); 
             const wrapper = document.getElementById('grid-wrapper'); 
             if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
-            
-            const targetWidth = outer.clientWidth * 0.92;
-            const targetHeight = outer.clientHeight * 0.92;
-            
-            const scaleX = targetWidth / wrapper.offsetWidth;
-            const scaleY = targetHeight / wrapper.offsetHeight;
-            const scale = Math.min(scaleX, scaleY); 
-            
+            const scale = Math.min((outer.clientWidth * 0.92) / wrapper.offsetWidth, (outer.clientHeight * 0.92) / wrapper.offsetHeight); 
             wrapper.style.transform = `scale(${scale})`; 
         }
     </script>
