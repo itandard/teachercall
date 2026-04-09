@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 교사 호출기</title>
+    <title>스마트 교사 호출기 - 커스텀 배치 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -11,6 +11,10 @@
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text: #1e293b;
+            --accent: #f43f5e;
+            --edit-color: #0891b2;
+            --partition-idle: rgba(203, 213, 225, 0.4);
+            --partition-active: #334155;
         }
 
         body {
@@ -23,7 +27,6 @@
             overflow: hidden;
         }
 
-        /* 사이드바 메뉴 */
         nav {
             width: 260px;
             background: #1e293b;
@@ -31,7 +34,8 @@
             padding: 2rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
+            z-index: 100;
         }
 
         .menu-item {
@@ -45,79 +49,132 @@
 
         .menu-item:hover { background: rgba(255,255,255,0.1); }
         .menu-item.active { background: var(--primary); border-color: var(--primary); }
+        .menu-item.edit-mode.active { background: var(--edit-color); border-color: var(--edit-color); }
 
-        /* 메인 영역 */
+        nav label { font-size: 0.8rem; opacity: 0.6; margin-top: 1rem; margin-bottom: 0.2rem; display: block; }
+        select, input[type="number"] { width: 100%; padding: 0.6rem; border-radius: 0.4rem; background: #334155; color: white; border: none; box-sizing: border-box; }
+
         main {
             flex: 1;
             padding: 2rem;
-            overflow-y: auto;
+            overflow: auto;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
-        /* 격자 배치도 스타일 */
+        /* 배치도 래퍼 */
+        #grid-wrapper {
+            position: relative;
+            margin-top: 2rem;
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 20px;
+            display: inline-block;
+            align-self: flex-start; /* 중앙 정렬 방지 */
+        }
+
+        /* 실제 그리드 영역 */
         #grid-container {
             display: grid;
-            gap: 1rem;
-            margin-top: 1rem;
+            position: relative;
+            z-index: 10;
         }
 
         .seat-card {
             background: var(--card-bg);
-            border-radius: 1rem;
-            padding: 1.5rem;
+            border-radius: 0.4rem;
+            padding: 0.5rem;
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: 0.2s;
-            border: 2px solid transparent;
+            border: 1px solid #e2e8f0;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            aspect-ratio: 1.2 / 1;
+            width: 120px;
+            height: 100px;
+            box-sizing: border-box;
         }
 
-        .seat-card:active { transform: scale(0.95); }
-        .seat-card.assigned:hover { border-color: var(--primary); }
-        .seat-card h3 { margin: 0; font-size: 1.2rem; }
-        .seat-card p { margin: 0.5rem 0 0; font-size: 0.9rem; color: #64748b; }
-        .seat-card.empty { opacity: 0.3; cursor: default; }
-
-        /* 교사용 수신 화면 */
-        #monitor-view {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+        .seat-card h3 { margin: 0; font-size: 1rem; pointer-events: none; }
+        .seat-card p { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; pointer-events: none; }
+        .seat-card.empty { border: 1px dashed #cbd5e1; background: rgba(255,255,255,0.4); }
+        
+        /* 파티션 레이어 */
+        #partition-layer {
+            position: absolute;
+            top: 20px; /* grid-wrapper의 padding과 일치 */
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            pointer-events: none; /* 하위 요소 개별 설정 */
+            z-index: 20;
         }
 
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            background: #dcfce7;
-            color: #166534;
-            font-weight: bold;
-            margin-bottom: 2rem;
+        .partition {
+            position: absolute;
+            pointer-events: auto;
+            transition: all 0.2s;
         }
 
-        #call-log {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--primary);
-            min-height: 4.5rem;
+        .partition-v {
+            width: 8px;
+            cursor: pointer;
+            transform: translateX(-4px);
+        }
+        .partition-v.active {
+            border-left: 3px solid var(--partition-active);
         }
 
-        .pulse {
-            animation: pulse-animation 2s infinite;
+        .partition-h {
+            height: 8px;
+            cursor: pointer;
+            transform: translateY(-4px);
+        }
+        .partition-h.active {
+            border-top: 3px solid var(--partition-active);
         }
 
-        @keyframes pulse-animation {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .mode-edit .partition:not(.active) {
+            background: var(--partition-idle);
         }
+        .mode-edit .partition:hover {
+            background: var(--edit-color) !important;
+            opacity: 0.8;
+        }
+
+        .mode-student .partition:not(.active) {
+            display: none;
+        }
+
+        .mode-student .seat-card.assigned:hover { border-color: var(--primary); background: #eef2ff; }
+        
+        .save-bar { 
+            background: #0e7490; color: white; padding: 0.8rem 1.5rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 0.8rem; margin-bottom: 1rem; gap: 1rem;
+        }
+        .config-input { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .config-input input { width: 60px !important; }
+
+        #teacher-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .status-badge { padding: 0.5rem 1rem; border-radius: 2rem; background: #dcfce7; color: #166534; font-weight: bold; margin-bottom: 2rem; }
+
+        #call-popup {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 3rem 5rem; border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); z-index: 2000; text-align: center; border: 4px solid var(--primary);
+        }
+        #popup-name { font-size: 4rem; font-weight: 900; display: block; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1999; }
+
+        .modal { display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 2rem; border-radius: 1rem; width: 320px; text-align: center; }
+        .btn { padding: 0.6rem 1rem; border-radius: 0.4rem; border: none; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: var(--edit-color); color: white; }
+        .btn-save { background: white; color: var(--edit-color); }
     </style>
 </head>
 <body>
@@ -130,178 +187,290 @@
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">
             <b>교사용 모드</b><br><small>교무실 안 모니터</small>
         </div>
-        <hr style="width:100%; opacity:0.1;">
+        
+        <label>관리 도구</label>
+        <div id="btn-edit" class="menu-item edit-mode" onclick="switchMode('edit')">
+            <b>좌석 배치 수정</b><br><small>그리드 & 파티션</small>
+        </div>
+
+        <hr style="width:100%; opacity:0.1; margin: 1rem 0;">
         <label>부서 선택</label>
-        <select id="dept-select" onchange="loadLayout()" style="padding:0.5rem; border-radius:0.3rem;">
+        <select id="dept-select" onchange="loadLayout()">
             <option value="교무부">교무부</option>
             <option value="1학년부">1학년부</option>
             <option value="2학년부">2학년부</option>
         </select>
     </nav>
 
-    <main>
-        <!-- 학생용: 배치도 화면 -->
-        <div id="student-view">
+    <main id="main-content" class="mode-student">
+        <div id="grid-view">
+            <div id="edit-header" style="display: none;" class="save-bar">
+                <div class="config-input">
+                    Rows: <input type="number" id="grid-rows" value="4" min="1" max="10">
+                    Cols: <input type="number" id="grid-cols" value="6" min="1" max="10">
+                    <button class="btn btn-save" onclick="updateGridSize()">적용</button>
+                </div>
+                <div>
+                    <button class="btn btn-save" onclick="saveLayoutChanges()">배치 저장</button>
+                </div>
+            </div>
+            
             <h1 id="view-title">교무부 좌석 배치도</h1>
-            <p>호출하실 선생님의 자리를 터치해 주세요.</p>
-            <div id="grid-container"></div>
+            <p id="view-desc">호출하실 선생님의 자리를 터치해 주세요.</p>
+            
+            <div id="grid-wrapper">
+                <div id="grid-container"></div>
+                <div id="partition-layer"></div>
+            </div>
         </div>
 
-        <!-- 교사용: TTS 수신 화면 -->
         <div id="teacher-view" style="display: none;">
             <div id="monitor-view">
                 <div class="status-badge">● 실시간 수신 중</div>
-                <div id="call-log">수신 대기 중...</div>
-                <p style="margin-top: 2rem; color: #94a3b8;">새로운 호출이 발생하면 음성으로 안내합니다.</p>
+                <div style="font-size: 2rem; font-weight: 600;">수신 대기 중...</div>
+            </div>
+        </div>
+
+        <div id="overlay" class="overlay"></div>
+        <div id="call-popup"><span id="popup-name"></span><span id="popup-msg">선생님 호출 중</span></div>
+
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <h3 id="modal-coord">좌표 배정</h3>
+                <select id="teacher-picker"></select>
+                <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                    <button class="btn" style="flex:1" onclick="closeEditModal()">취소</button>
+                    <button class="btn btn-primary" style="flex:1" onclick="applySeatChange()">배정</button>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
-        // 1. Supabase 초기화
         const SUPABASE_URL = 'https://tonuqhqyeqgjbyeihjid.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_JVBFWd4KQ13j_Y-wN-5-7A_-Gm57cZw';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentMode = 'student';
+        let rows = 4, cols = 6;
+        let partitions = { v: [], h: [] }; 
+        let localLayout = [];
+        let activeEditCoord = { r: 0, c: 0 };
         let realtimeChannel = null;
 
-        // 2. 모드 전환 함수
-        function switchMode(mode) {
+        async function switchMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`btn-${mode}`).classList.add('active');
+            document.getElementById('main-content').className = `mode-${mode}`;
 
-            if (mode === 'student') {
-                document.getElementById('student-view').style.display = 'block';
-                document.getElementById('teacher-view').style.display = 'none';
-                stopListening();
+            document.getElementById('grid-view').style.display = (mode === 'teacher') ? 'none' : 'block';
+            document.getElementById('teacher-view').style.display = (mode === 'teacher') ? 'flex' : 'none';
+            document.getElementById('edit-header').style.display = (mode === 'edit') ? 'flex' : 'none';
+
+            if (mode === 'teacher') {
+                stopListening(); startListening(); speak("");
             } else {
-                document.getElementById('student-view').style.display = 'none';
-                document.getElementById('teacher-view').style.display = 'flex';
-                // 브라우저 TTS 권한을 위해 빈 소리 재생
-                speak(""); 
-                startListening();
+                stopListening();
+                await fetchTeachers();
+                renderGrid();
             }
         }
 
-        // 3. 배치도 로드 (학생용)
-        async function loadLayout() {
+        async function fetchTeachers() {
+            const { data, error } = await _supabase.from('t_teacher').select('*').order('name');
+            if (!error) localLayout = data;
+        }
+
+        function updateGridSize() {
+            rows = parseInt(document.getElementById('grid-rows').value);
+            cols = parseInt(document.getElementById('grid-cols').value);
+            renderGrid();
+        }
+
+        function renderGrid() {
             const dept = document.getElementById('dept-select').value;
             document.getElementById('view-title').innerText = `${dept} 좌석 배치도`;
-
-            const { data: teachers, error } = await _supabase
-                .from('t_teacher')
-                .select('*')
-                .eq('dept', dept);
-
-            if (error) return;
-
+            
             const container = document.getElementById('grid-container');
+            const pLayer = document.getElementById('partition-layer');
             container.innerHTML = '';
-            
-            // 4행 6열 예시 (편집기에서 설정한 행/열 크기에 맞춤)
-            container.style.gridTemplateColumns = 'repeat(6, 1fr)';
+            pLayer.innerHTML = '';
 
-            // 24개 칸 생성
-            for (let i = 0; i < 24; i++) {
-                const r = Math.floor(i / 6);
-                const c = i % 6;
-                const t = teachers.find(teacher => teacher.row_index === r && teacher.col_index === c);
+            const gap = 15; 
+            const cardW = 120, cardH = 100;
 
-                const card = document.createElement('div');
-                card.className = t ? 'seat-card assigned' : 'seat-card empty';
-                
-                if (t) {
-                    card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
-                    card.onclick = () => sendCall(t.id, t.name);
-                } else {
-                    card.innerHTML = `<small style="color:#ccc">${r},${c}</small>`;
-                }
-                container.appendChild(card);
-            }
-        }
+            // 그리드 정의
+            container.style.gridTemplateRows = `repeat(${rows}, ${cardH}px)`;
+            container.style.gridTemplateColumns = `repeat(${cols}, ${cardW}px)`;
+            container.style.gap = `${gap}px`;
 
-        // 4. 호출 보내기 (학생용 -> DB INSERT)
-        async function sendCall(teacherId, teacherName) {
-            const { error } = await _supabase
-                .from('t_calls')
-                .insert([{ id: teacherId }]);
+            const deptTeachers = localLayout.filter(t => t.dept === dept);
 
-            if (error) {
-                alert('호출 실패');
-            } else {
-                // 시각적 피드백
-                const log = document.createElement('div');
-                alert(`${teacherName} 선생님을 호출했습니다.`);
-            }
-        }
-
-        // 5. 실시간 감지 시작 (교사용)
-        function startListening() {
-            if (realtimeChannel) return;
-
-            realtimeChannel = _supabase
-                .channel('any')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, async (payload) => {
-                    const teacherId = payload.new.id;
+            // 좌석 배치
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const t = deptTeachers.find(teacher => teacher.row_index === r && teacher.col_index === c);
+                    const card = document.createElement('div');
+                    card.className = t ? 'seat-card assigned' : 'seat-card empty';
                     
-                    // 호출된 선생님 이름 가져오기
-                    const { data } = await _supabase
-                        .from('t_teacher')
-                        .select('name')
-                        .eq('id', teacherId)
-                        .single();
-
-                    if (data) {
-                        handleIncomingCall(data.name);
+                    if (t) {
+                        card.innerHTML = `<h3>${t.name}</h3><p>${t.subject || ''}</p>`;
+                        card.onclick = () => (currentMode === 'edit' ? handleEditClick(r, c, t) : sendCall(t.id, t.name));
+                    } else {
+                        card.innerHTML = `<small style="color:#cbd5e1">${r},${c}</small>`;
+                        card.onclick = () => (currentMode === 'edit' ? handleEditClick(r, c, null) : null);
                     }
-                })
-                .subscribe();
-        }
+                    container.appendChild(card);
+                }
+            }
 
-        function stopListening() {
-            if (realtimeChannel) {
-                _supabase.removeChannel(realtimeChannel);
-                realtimeChannel = null;
+            // 파티션 배치 (별도 루프로 좌표 계산 일관성 확보)
+            // 수평선 (rows + 1 만큼 필요)
+            for (let r = 0; r <= rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    createPartition(r, c, 'h', pLayer, cardW, cardH, gap);
+                }
+            }
+            // 수직선 (cols + 1 만큼 필요)
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c <= cols; c++) {
+                    createPartition(r, c, 'v', pLayer, cardW, cardH, gap);
+                }
             }
         }
 
-        // 6. 호출 처리 및 TTS (교사용)
-        function handleIncomingCall(name) {
-            const display = document.getElementById('call-log');
-            const message = `${name} 선생님 호출`;
+        function createPartition(r, c, type, parent, w, h, g) {
+            const handle = document.createElement('div');
+            const id = `r${r}c${c}`;
+            handle.className = `partition partition-${type} ${partitions[type].includes(id) ? 'active' : ''}`;
             
-            display.innerText = message;
-            display.classList.add('pulse');
-            
-            // TTS 출력
-            speak(message);
+            if (type === 'v') {
+                // 수직선은 좌석 카드의 왼쪽 시작점에 위치. 
+                // gap의 절반만큼 왼쪽으로 이동하여 중앙 배치.
+                const leftPos = c * (w + g) - (g / 2);
+                const topPos = r * (h + g);
+                handle.style.left = `${leftPos}px`;
+                handle.style.top = `${topPos}px`;
+                handle.style.height = `${h}px`;
+            } else {
+                // 수평선은 좌석 카드의 위쪽 시작점에 위치.
+                const topPos = r * (h + g) - (g / 2);
+                const leftPos = c * (w + g);
+                handle.style.top = `${topPos}px`;
+                handle.style.left = `${leftPos}px`;
+                handle.style.width = `${w}px`;
+            }
 
-            // 5초 후 메시지 초기화
+            handle.onclick = (e) => {
+                if (currentMode !== 'edit') return;
+                e.stopPropagation();
+                if (partitions[type].includes(id)) {
+                    partitions[type] = partitions[type].filter(i => i !== id);
+                    handle.classList.remove('active');
+                } else {
+                    partitions[type].push(id);
+                    handle.classList.add('active');
+                }
+            };
+            parent.appendChild(handle);
+        }
+
+        function handleEditClick(r, c, teacher) {
+            if (teacher) {
+                if (confirm(`${teacher.name} 선생님의 배치를 취소하시겠습니까?`)) {
+                    const idx = localLayout.findIndex(t => t.id === teacher.id);
+                    localLayout[idx].row_index = null; 
+                    localLayout[idx].col_index = null;
+                    renderGrid();
+                }
+            } else {
+                activeEditCoord = { r, c };
+                openEditModal();
+            }
+        }
+
+        function openEditModal() {
+            const picker = document.getElementById('teacher-picker');
+            document.getElementById('modal-coord').innerText = `${activeEditCoord.r}, ${activeEditCoord.c} 배정`;
+            picker.innerHTML = '<option value="">-- 선생님 선택 --</option>';
+            localLayout.filter(t => t.row_index === null).forEach(t => {
+                const opt = document.createElement('option'); opt.value = t.id; opt.innerText = t.name;
+                picker.appendChild(opt);
+            });
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        function applySeatChange() {
+            const tid = document.getElementById('teacher-picker').value;
+            if (!tid) return;
+            const idx = localLayout.findIndex(t => t.id == tid);
+            localLayout[idx].dept = document.getElementById('dept-select').value;
+            localLayout[idx].row_index = activeEditCoord.r;
+            localLayout[idx].col_index = activeEditCoord.c;
+            closeEditModal(); 
+            renderGrid();
+        }
+
+        async function saveLayoutChanges() {
+            if (!confirm("현재 배치를 저장하시겠습니까? (파티션은 세션에 저장됩니다)")) return;
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "저장 중...";
+            
+            try {
+                for (const t of localLayout) {
+                    await _supabase.from('t_teacher').update({
+                        dept: t.dept, row_index: t.row_index, col_index: t.col_index
+                    }).eq('id', t.id);
+                }
+                alert("성공적으로 저장되었습니다.");
+                switchMode('student');
+            } catch (err) {
+                alert("저장 실패");
+            } finally {
+                btn.innerText = "배치 저장";
+            }
+        }
+
+        async function sendCall(tid, name) {
+            const { error } = await _supabase.from('t_calls').insert([{ id: tid }]);
+            if (!error) alert(`${name} 선생님을 호출했습니다.`);
+        }
+
+        function startListening() {
+            realtimeChannel = _supabase.channel('calls').on('postgres_changes', { event:'INSERT', schema:'public', table:'t_calls' }, async (p) => {
+                const { data } = await _supabase.from('t_teacher').select('name').eq('id', p.new.id).single();
+                if (data) showCallPopup(data.name);
+            }).subscribe();
+        }
+
+        function stopListening() { if (realtimeChannel) _supabase.removeChannel(realtimeChannel); }
+
+        function showCallPopup(name) {
+            document.getElementById('popup-name').innerText = name;
+            document.getElementById('call-popup').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            speak(`${name} 선생님 호출`);
             setTimeout(() => {
-                display.innerText = "수신 대기 중...";
-                display.classList.remove('pulse');
-            }, 5000);
+                document.getElementById('call-popup').style.display = 'none';
+                document.getElementById('overlay').style.display = 'none';
+            }, 3000);
         }
 
-        // TTS 엔진 함수
-        function speak(text) {
-            if (typeof SpeechSynthesisUtterance === "undefined") {
-                console.warn("이 브라우저는 TTS를 지원하지 않습니다.");
-                return;
-            }
-            
-            window.speechSynthesis.cancel(); // 현재 재생 중인 소리 중단
-            const uttr = new SpeechSynthesisUtterance(text);
-            uttr.lang = 'ko-KR';
-            uttr.rate = 1.0;
-            uttr.pitch = 1.0;
-            window.speechSynthesis.speak(uttr);
+        function speak(t) {
+            if (!t) return; window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR';
+            window.speechSynthesis.speak(u);
         }
 
-        // 초기 실행
-        loadLayout();
+        function loadLayout() { renderGrid(); }
+
+        (async () => {
+            await fetchTeachers();
+            renderGrid();
+        })();
     </script>
 </body>
 </html>
