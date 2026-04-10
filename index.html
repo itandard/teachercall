@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>교사 호출 시스템 - 장유고등학교</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -19,16 +19,14 @@
             --danger: #ef4444;
         }
 
-        /* [수정] 아이패드 상단바/주소창 가림 방지 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0; background-color: var(--bg); color: var(--text-main);
             display: flex; height: 100vh; width: 100vw; overflow: hidden;
             user-select: none; -webkit-user-select: none;
-            padding-top: env(safe-area-inset-top); /* iOS/iPadOS 안전 영역 대응 */
         }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -70,11 +68,8 @@
         .menu-item:hover { background: rgba(255,255,255,0.05); }
         .menu-item.active { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); }
 
-        /* 메인 컨텐츠 영역 - [수정] 상단 여백 추가 */
-        main { 
-            flex: 1; display: flex; flex-direction: column; overflow: hidden; 
-            position: relative; padding: 2.5rem 2rem 2rem 2rem; /* 위쪽 패딩을 더 넓게 잡음 */
-        }
+        /* 메인 컨텐츠 영역 */
+        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; padding: 2rem; }
 
         /* 부서 대시보드 */
         #dashboard-view { flex: 1; display: flex; flex-direction: column; text-align: center; }
@@ -106,14 +101,14 @@
         #grid-wrapper { position: relative; display: inline-block; transition: transform 0.1s ease-out; transform-origin: center center; }
         #grid-container { display: grid; position: relative; z-index: 10; }
 
-        /* 좌석 카드 - [수정] 성함 및 과목 텍스트 크기 확대 */
+        /* 좌석 카드 */
         .seat-card {
             background: #1e293b; border-radius: 1.2rem; text-align: center;
             border: 2px solid #334155; display: flex; flex-direction: column; justify-content: center;
             transition: 0.2s; cursor: pointer; position: relative; z-index: 10; padding: 10px;
         }
-        .seat-card h3 { font-size: 4.2rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; } /* 3.5rem -> 4.2rem */
-        .seat-card p { font-size: 2.2rem; color: var(--primary); margin: 8px 0 0 0; font-weight: 800; } /* 1.8rem -> 2.2rem */
+        .seat-card h3 { font-size: 3.5rem; margin: 0; font-weight: 900; color: #fff; line-height: 1.1; }
+        .seat-card p { font-size: 1.8rem; color: var(--primary); margin: 12px 0 0 0; font-weight: 800; }
         .seat-card.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
         .seat-card.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); cursor: default; }
 
@@ -169,7 +164,7 @@
 
     <div id="toast">알림</div>
 
-    <!-- 로그인 오버레이 -->
+    <!-- v2 로그인 오버레이 (엔터키 지원 추가) -->
     <div id="login-overlay">
         <div class="login-box">
             <h1 style="color:white; font-size:2.5rem; font-weight:900; margin-bottom:0.5rem;">교사 호출 시스템</h1>
@@ -272,11 +267,15 @@
 
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+            // 1. 초기화 및 이벤트 리스너 등록
             window.onload = function() {
                 document.getElementById('login-submit-btn').onclick = attemptLogin;
+                
+                // 로그인 입력창 엔터키 대응
                 const loginId = document.getElementById('login-id');
                 const loginPw = document.getElementById('login-pw');
                 [loginId, loginPw].forEach(el => el.onkeydown = e => { if(e.key === 'Enter') attemptLogin(); });
+
                 window.addEventListener('resize', autoScale);
             };
 
@@ -294,16 +293,18 @@
                     osc.stop(start + duration);
                 };
                 const now = audioCtx.currentTime;
-                playNote(783.99, now, 0.8);
-                playNote(659.25, now + 0.4, 1.2);
+                playNote(783.99, now, 0.8); // G5
+                playNote(659.25, now + 0.4, 1.2); // E5
             }
 
             function getKSTTime() {
                 const now = new Date();
                 const offset = now.getTimezoneOffset() * 60000;
                 const kstDate = new Date(now.getTime() - offset + (9 * 3600000));
+                
                 const pad = (n) => n.toString().padStart(2, '0');
                 const ms = now.getMilliseconds().toString().padStart(3, '0').substring(0, 2);
+
                 return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
             }
 
@@ -328,6 +329,7 @@
                 document.getElementById('sidebar').style.display = 'flex';
                 document.getElementById('main-content').style.display = 'flex';
                 await fetchDeptList();
+
                 if (currentUser.grade == 1) { 
                     ['btn-student', 'btn-teacher', 'btn-edit'].forEach(id => document.getElementById(id).style.display = 'flex');
                     switchMode('student');
@@ -352,10 +354,12 @@
                 `).join('');
             }
 
+            // 전역 노출이 필요한 함수들 (onclick 핸들러용)
             window.selectDept = async function(deptName) {
                 currentDept = deptName;
                 document.getElementById('view-title').innerText = deptName;
                 document.getElementById('dashboard-view').style.display = 'none';
+                
                 const instruction = document.getElementById('call-instruction');
                 instruction.style.display = (currentMode === 'student') ? 'block' : 'none';
 
@@ -435,7 +439,9 @@
                 document.getElementById('popup-status').innerText = "선생님, 호출입니다!";
                 document.getElementById('popup-status').style.color = "var(--text-dim)";
                 popup.style.display = 'flex';
+                
                 playChime();
+                
                 if ('speechSynthesis' in window) {
                     setTimeout(() => {
                         const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
@@ -443,6 +449,7 @@
                         window.speechSynthesis.speak(msg);
                     }, 600);
                 }
+
                 setTimeout(() => { popup.style.display = 'none'; }, 6000);
             }
 
@@ -544,7 +551,7 @@
             };
 
             function startListening() {
-                stopListening();
+                stopListening(); // 기존 중복 채널 제거
                 realTimeChannel = _supabase.channel('public:t_calls')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 't_calls' }, payload => {
                         if (payload.new.dept === currentDept) triggerCallEffect(payload.new.name);
@@ -570,27 +577,16 @@
                 showDashboard(); 
             };
 
-            function showToast(msg) { 
-                const t = document.getElementById('toast'); 
-                t.innerText = msg; 
-                t.style.display = 'block';
-                setTimeout(() => { t.style.display = 'none'; }, 3000);
-            }
+            function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
 
-            function autoScale() {
-                const outer = document.getElementById('grid-outer-container');
-                const wrapper = document.getElementById('grid-wrapper');
-                if(!outer || !wrapper || currentDept === null) return;
-                
-                const padding = 60;
-                const scaleW = (outer.clientWidth - padding) / wrapper.offsetWidth;
-                const scaleH = (outer.clientHeight - padding) / wrapper.offsetHeight;
-                const minScale = Math.min(scaleW, scaleH, 1);
-                wrapper.style.transform = `scale(${minScale})`;
+            function autoScale() { 
+                const outer = document.getElementById('grid-outer-container'); 
+                const wrapper = document.getElementById('grid-wrapper'); 
+                if (!outer || !wrapper || document.getElementById('grid-view').style.display === 'none') return; 
+                const scale = Math.min((outer.clientWidth * 0.92) / wrapper.offsetWidth, (outer.clientHeight * 0.92) / wrapper.offsetHeight); 
+                wrapper.style.transform = `scale(${scale})`; 
             }
-
         })();
     </script>
-
 </body>
 </html>
