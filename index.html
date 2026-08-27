@@ -226,10 +226,12 @@
         <div id="btn-teacher" class="menu-item" onclick="switchMode('teacher')">🔔 실시간 수신 모니터</div>
         <div id="btn-edit" class="menu-item" onclick="switchMode('edit')">🛠️ 배치도 편집</div>
         
-        <div style="margin-top: auto; margin-bottom: 1rem; color: var(--text-dim); font-size: 0.85rem; font-weight: 600; line-height: 1.4;">
+        <div style="margin-top: auto; margin-bottom: 0.8rem; color: var(--text-dim); font-size: 0.85rem; font-weight: 600; line-height: 1.4;">
             v1.1.0<br>ⓒ 2026. 홍정보 x Gemini
         </div>
-        <!-- 로그아웃 버튼을 전역 logoutApp() 호출로 변경 -->
+
+        <!-- 전체화면 토글 버튼 추가 -->
+        <button id="btn-fullscreen" onclick="toggleFullScreen()" style="background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 1rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1rem; width: 100%; margin-bottom: 0.8rem;">⛶ 전체화면 전환</button>
         <button onclick="logoutApp()" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1.2rem; border-radius: 1rem; cursor: pointer; font-weight: 800; font-size: 1.1rem; width: 100%;">로그아웃</button>
     </nav>
 
@@ -253,7 +255,7 @@
                 </div>
             </div>
             
-            <div id="grid-header-row" style="display:flex; justify-content: space-between; align-items: center; margin-bottom:1.5rem; gap: 20px;">
+            <div id="grid-header-row" style="display:flex; justify- space-between; align-items: center; margin-bottom:1.5rem; gap: 20px;">
                 <button onclick="showDashboard()" style="background:rgba(99, 102, 241, 0.1); border:1px solid var(--primary); color:var(--primary); padding: 0.8rem 1.5rem; border-radius: 1rem; font-weight:800; cursor:pointer; font-size: 1.1rem; flex-shrink: 0;">◀ 부서 목록으로</button>
                 <h2 id="view-title" style="margin:0; font-weight:900; font-size: 2.5rem; color: var(--primary); text-align: right; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">부서명</h2>
             </div>
@@ -317,14 +319,13 @@
             window.onload = function() {
                 document.getElementById('login-submit-btn').onclick = attemptLogin;
                 
-                // 로그인 입력창 엔터키 대응
                 const loginId = document.getElementById('login-id');
                 const loginPw = document.getElementById('login-pw');
                 [loginId, loginPw].forEach(el => el.onkeydown = e => { if(e.key === 'Enter') attemptLogin(); });
 
                 window.addEventListener('resize', autoScale);
 
-                // ★ 태블릿 슬립 모드 후 화면 진입 시 실시간 및 오디오 자동 재연결
+                // 화면 전환(슬립 복구) 시 오디오 및 실시간 채널 복원
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
                         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -332,7 +333,15 @@
                     }
                 });
 
-                // ★ 저장된 로그인 정보가 있다면 자동 로그인 실행
+                // 전체화면 상태 변경 감지 이벤트
+                document.addEventListener('fullscreenchange', () => {
+                    const btn = document.getElementById('btn-fullscreen');
+                    if (btn) {
+                        btn.innerText = document.fullscreenElement ? '❌ 전체화면 해제' : '⛶ 전체화면 전환';
+                    }
+                });
+
+                // 저장된 로그인 세션 복구
                 const savedUser = localStorage.getItem('tc_saved_user');
                 if (savedUser) {
                     try {
@@ -340,6 +349,19 @@
                         initApp();
                     } catch(e) {
                         localStorage.removeItem('tc_saved_user');
+                    }
+                }
+            };
+
+            // 전체화면 토글 함수
+            window.toggleFullScreen = function() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        showToast("전체화면을 지원하지 않는 브라우저 환경입니다.");
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
                     }
                 }
             };
@@ -372,7 +394,6 @@
                 return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
             }
 
-            // ★ 로그인 성공 시 로컬 스토리지 저장
             async function attemptLogin() {
                 const id = document.getElementById('login-id').value;
                 const pw = document.getElementById('login-pw').value;
@@ -390,7 +411,6 @@
                 }
             }
 
-            // ★ 로그아웃 시 로컬 스토리지 삭제
             window.logoutApp = function() {
                 localStorage.removeItem('tc_saved_user');
                 location.reload();
@@ -493,26 +513,43 @@
                 setTimeout(autoScale, 100);
             }
 
+            // ★ 학생측 호출 발송 (동기화 로직 적용)
             async function initiateCall(name) {
                 if(isCallingLock) return;
                 isCallingLock = true;
                 renderGrid();
+
                 const popup = document.getElementById('call-popup');
                 document.getElementById('popup-name').innerText = name;
                 document.getElementById('popup-status').innerText = "선생님을 호출 중입니다...";
                 document.getElementById('popup-status').style.color = "var(--primary)";
                 popup.style.display = 'flex';
                 
+                const startTime = Date.now();
+                // DB Insert 처리
                 await _supabase.from('t_calls').insert([{ name, dept: currentDept, call_time: getKSTTime() }]);
-                setTimeout(() => { popup.style.display = 'none'; isCallingLock = false; renderGrid(); }, 3000);
+                
+                document.getElementById('popup-status').innerText = "호출이 전달되었습니다!";
+                document.getElementById('popup-status').style.color = "var(--accent)";
+
+                // DB 전송 시간을 차감하여 정확히 4.5초에 맞춰 팝업을 닫음
+                const elapsed = Date.now() - startTime;
+                const remainingTime = Math.max(1000, 4500 - elapsed);
+
+                setTimeout(() => { 
+                    popup.style.display = 'none'; 
+                    isCallingLock = false; 
+                    renderGrid(); 
+                }, remainingTime);
             }
 
+            // ★ 교사측 수신 화면 (4.5초로 통일 및 음성출력 속도 동기화)
             function triggerCallEffect(name) {
                 if(currentMode !== 'teacher') return;
                 const popup = document.getElementById('call-popup');
                 document.getElementById('popup-name').innerText = name;
                 document.getElementById('popup-status').innerText = "선생님, 호출입니다!";
-                document.getElementById('popup-status').style.color = "var(--text-dim)";
+                document.getElementById('popup-status').style.color = "var(--accent)";
                 popup.style.display = 'flex';
                 
                 playChime();
@@ -521,10 +558,11 @@
                         const msg = new SpeechSynthesisUtterance(`${name} 선생님.`);
                         msg.lang = 'ko-KR'; msg.rate = 0.9;
                         window.speechSynthesis.speak(msg);
-                    }, 600);
+                    }, 400); // 딜레이를 0.4초로 단축하여 빠른 음성 응답
                 }
 
-                setTimeout(() => { popup.style.display = 'none'; }, 6000);
+                // 학생 측과 동일하게 4.5초 후 팝업 닫기
+                setTimeout(() => { popup.style.display = 'none'; }, 4500);
             }
 
             function renderPartitions(cardW, cardH, gap) {
